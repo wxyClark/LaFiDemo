@@ -17,6 +17,7 @@ Laravel 13 + Filament 电商 SaaS（在线电商、O2O、分销）参考实现�
 
 ## 文档
 
+- [技术选型：总览、对比与版本决策](doc/technology-selection.md)
 - [架构决策、领域模型、约定、示例与实施路线](docs/architecture.md)
 
 ## 核心原则
