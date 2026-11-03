@@ -17,8 +17,9 @@ Laravel 13 + Filament 电商 SaaS（在线电商、O2O、分销）参考实现�
 
 ## 文档
 
-- [技术选型：总览、对比与版本决策](doc/technology-selection.md)
-- [系统架构图、模块目录与数据库表结构初稿](doc/architecture-blueprint.md)
+- [开发规范总览](docs/rules/README.md)
+- [技术选型：总览、对比与版本决策](docs/technology-selection.md)
+- [系统架构图、模块目录与数据库表结构初稿](docs/architecture-blueprint.md)
 - [架构决策、领域模型、约定、示例与实施路线](docs/architecture.md)
 
 ## 核心原则
@@ -31,7 +32,7 @@ Laravel 13 + Filament 电商 SaaS（在线电商、O2O、分销）参考实现�
 
 ## 本地启动
 
-项目骨架和依赖尚未加入。完成 Laravel 初始化后，按 `.env.example` 配置数据库和 Redis，再执行：
+项目骨架和依赖尚��加入。完成 Laravel 初始化后，按 `.env.example` 配置数据库和 Redis，再执行：
 
 ```bash
 composer install
