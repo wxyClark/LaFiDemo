@@ -2,14 +2,16 @@
 
 本文档集为 LaFiDemo 项目的工程约定，适用于代码、测试、数据结构、管理后台、API、部署及协作流程。规范参考 PHP、Laravel、Filament、MySQL、Redis、Pest 官方文档中的通用最佳实践，并结合电商 SaaS 的多租户、订单、库存、支付和审计风险制定。
 
-> “国内大厂规范”并非单一公开标准。本规范吸收成熟团队常见工程实践（代码审查、最小权限、可观测性、灰度/回滚、兼容性、自动化质量门禁），不声称代表任何特定公司的内部制度。官方框架/API 的当前文档优先于本文中可能过时的版本细节。
+> “国内大厂规范”并非单一公开标准。本规范吸收成熟团队常见工程实践（代码审查、最小权限、可观测性、灰度/回滚、兼容性、自动化质量门禁），不声称代表任何特定公司的内部制度。
 
 ## 文件
 
-- [`coding-standards.md`](coding-standards.md)：PHP 8.3、Laravel 13、模块边界、Filament、API 约定。
+- [`coding-standards.md`](coding-standards.md)：PHP 8.4+、Laravel 13、模块边界、Filament、API 约定。
 - [`data-and-cache.md`](data-and-cache.md)：MySQL 8.4、Redis、事务、索引、库存一致性与队列。
 - [`testing-security.md`](testing-security.md)：Pest、质量门禁、安全、租户隔离和隐私。
 - [`delivery-and-operations.md`](delivery-and-operations.md)：Git/PR、CI、迁移发布、可观测性、备份与回滚。
+- [`../architecture-components.md`](../architecture-components.md)：PHP 8.4 运行时、CVE-2024-4577 安全要求和基础 Composer 组件决策。
+- [`../ecommerce-platform-blueprint.md`](../ecommerce-platform-blueprint.md)：电商 SaaS 系统总体方案与实施路线。
 
 仓库根目录 [`AGENTS.md`](../../AGENTS.md) 是面向所有贡献者和自动化编码代理的全局摘要。它要求先遵循此处规范，并确保测试/检查结果如实报告。
 

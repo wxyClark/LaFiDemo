@@ -10,22 +10,23 @@
 
 | 领域 | 选择 | 说明 |
 | --- | --- | --- |
-| 运行时 | Laravel 13、PHP 8.3+ | PHP 和扩展版本以 Laravel 13 官方兼容矩阵及部署镜像为准。 |
-| 管理端 | Filament 稳定兼容版 | Filament 是运营/商家后台，不是面向消费者的店铺前端。平台管理员、租户员工使用不同角色与策略。 |
-| 主数据库 | MySQL 8.4 LTS | 团队已有 PostgreSQL 能力时也可选 PostgreSQL；只选一种作为默认并维护其迁移/测试环境。 |
+| 运行时 | Laravel 13、PHP 8.4.3+（生产使用 PHP 8.4 最新安全补丁） | PHP-CGI CVE-2024-4577 的修复最低点和部署要求见 [`architecture-components.md`](architecture-components.md)。最低版本不是推荐生产补丁。 |
+| 管理端 | Filament 5（须验证 Laravel 13 / PHP 兼容） | Filament 是运营/商家后台，不是面向消费者的店铺前端。平台管理员、租户员工使用不同角色与策略。 |
+| 主数据库 | MySQL 8.4 LTS | 团队已有 PostgreSQL 能力时也可另行 ADR 决策；当前默认以 MySQL 作为唯一主库。 |
 | 缓存与队列 | Redis + Laravel Queue；生产用 Horizon | 缓存不是事实来源。队列处理需幂等、重试有上限、失败可告警和重放。 |
 | API | REST `/api/v1`、OpenAPI | 统一错误格式、分页、请求 ID、限流和弃用策略；不从 Filament 页面直接复用控制器逻辑。 |
-| 身份认证 | Sanctum | 自有 Web/App API 的起点；第三方授权与多客户端委托需要时再引入 OAuth 2.0。 |
+| 身份认证 | Sanctum | 自有 Web/App API 的起点；第三方授权与多客户端委托需要时再采用 OAuth 2.0。 |
 | 搜索 | 初期数据库查询；规模/相关性需求明确后加 Meilisearch 或 OpenSearch | 搜索索引可重建，不作为商品/库存主数据。 |
 | 文件 | S3 兼容对象存储 + CDN | 私有文件使用短时签名 URL；上传校验内容、大小、MIME，避免信任客户端文件名。 |
+| 组件 | OpenSpout、Laravel Dompdf、Yansongda Pay、chillerlan QR Code、Intervention Image、Brick Money | 使用范围、安全边界与依赖约束详见 [`ecommerce-platform-blueprint.md`](ecommerce-platform-blueprint.md) 和 [`architecture-components.md`](architecture-components.md)。 |
 | 测试与质量 | Pest、Pint、Larastan/PHPStan | CI 阻止测试、格式、静态分析或迁移检查失败的变更。 |
 | 可观测性 | 结构化日志、错误追踪、队列/业务指标、健康检查 | 日志和指标不得泄露密码、令牌、支付敏感数据或完整个人信息。 |
 
-**选型原则：**版本不要凭文档静态指定 Filament、Redis 客户端或插件的小版本；初始化项目时锁定 Laravel 13 兼容的当前稳定版本，提交 `composer.lock`，依赖升级走 CI 和回归测试。不要为了抽象而引入不必要的 DDD 框架、事件总线或通用 Repository 层。
+版本以兼容矩阵和实际 `composer.lock` 为准；不得将未解析的版本约束表述为已安装/验证版本。生产镜像固定安全补丁并持续更新。
 
 ## 3. 架构形态与代码边界
 
-采用“模块化单体 + 清晰领域边界”。HTTP 层只负责认证、验证、授权、调用用例和格式化响应。领域规则不放在 Filament Resource、控制器、模型 Observer 或大型模型��调中。跨模块操作由明确的应用服务/用例协调；只在确有独立演进、扩缩容或团队边界需求时拆服务。
+采用“模块化单体 + 清晰领域边界”。HTTP 层只负责认证、验证、授权、调用用例和格式化响应。领域规则不放在 Filament Resource、控制器、模型 Observer 或大型模型回调中。跨模块操作由明确的应用服务/用例协调；只在确有独立演进、扩缩容或团队边界需求时拆服务。
 
 建议目录（按实际项目渐进创建）：
 
@@ -45,7 +46,7 @@ app/
     Shared/        # 金额、时钟、ID、通用基础设施（避免变成杂物箱）
   Providers/
   Filament/
-    Platform/      # SaaS 平台运营后台
+    Platform/      # 平台运营后台
     Tenant/        # 商家租户后台
 routes/api.php
  database/migrations/
@@ -60,41 +61,41 @@ routes/api.php
 - 采用共享数据库、共享表、`tenant_id` 起步；SaaS 平台管理员操作需显式、可审计的跨租户权限。
 - 每个请求通过认证用户的有效成员关系解析当前租户，不能信任客户端提交的 `tenant_id`。租户上下文必须可在队列任务中显式传递，任务完成后清理上下文。
 - 所有租户数据查询同时受授权策略和租户范围限制。数据库唯一索引通常包含租户键，例如 `(tenant_id, sku)`；外键和索引按租户查询模式设计。
-- 租户隔离不是只加一个全局 Scope：后台任务、导出、报表、批量更新、Webhook 和缓存键都必须覆盖，并编写跨租户访问失败测试。
-- 使用角色/权限（平台管理员、租户所有者、运营、客服、仓库、门店员工等），遵循最小权限。Filament 页面可见性不是授权边界，实际读写仍要经过 Policy/授权检查。
+- 租户隔离还要覆盖后台任务、导出、报表、批量更新、Webhook 和缓存键，并编写跨租户访问失败测试。
+- 使用 Laravel Policy/Gate + 明确的租户成员/角色关系起步；Filament 页面可见性不是授权边界，实际读写仍要经过服务端授权。
 - 独立 schema / 独立数据库只在法规、客户隔离等级、容量或恢复目标要求时引入，并定义迁移、备份、运维成本。
 
 ## 5. 核心领域模型建议
 
-核心实体应保留稳定内部 ID，外部订单号/业务编码与数据库主键分开。
+核心实体保留稳定内部 ID，外部订单号/业务编码与数据库主键分开。
 
-- **租户与组织**：`tenants`、`users`、`tenant_memberships`、`roles/permissions`。
+- **租户与组织**：`tenants`、`users`、`tenant_memberships`、roles/permissions。
 - **渠道与门店**：`sales_channels`、`stores`、`warehouses`、门店营业/配送范围。
 - **商品**：`products`、`product_variants`（SKU）、`categories`、`product_media`、`prices`；价格含币种和生效范围，SKU 是库存单位。
-- **库存**：`inventory_balances`（可售、预占等明确字段）、`inventory_movements`（只追加的流水）、`reservations`；库存余额变化必须有可追溯流水。
+- **库存**：`inventory_balances`（可售、预占等明确字段）、`inventory_movements`（只追加流水）、`reservations`；库存余额变化必须有可追溯流水。
 - **订单**：`orders`、`order_items`、`order_addresses`、`order_status_histories`；订单行固化 SKU、标题、规格、单价、优惠分摊、税/运费等下单快照。
-- **交易与售后**：`payments` / `payment_attempts`、`refunds`、`shipments`、`returns`；订单状态与支付状态分开建模。
+- **交易与售后**：`payments` / `payment_attempts`、`refunds`、`shipments`、`returns`；订单、支付和履约状态分开建模。
 - **促销**：`promotion_rules`、`coupons`、`coupon_redemptions`；价格计算可解释，优惠在下单时锁定结果并记录分摊。
 - **分销**：`distribution_relationships`、`commission_rules`、`commission_entries`、`settlements`；佣金规则版本化，佣金记录不可因规则修改被静默重算。
 - **可靠事件**：`outbox_messages`、`idempotency_keys`、审计记录；按保留期和隐私要求治理数据。
 
-金额用整数最小单位（如分）+ ISO 4217 币种；不要用浮点数。时间存 UTC，展示时按租户/门店时区转换。软删除不适合库存流水、支付记录、订单快照等财务/审计事实数据。
+金额存储使用最小货币单位整数 + ISO 4217 币种；计算使用 Brick Money 等精确运算策略，不使用浮点。币种精度与舍入规则按 ISO 4217/业务政策，不假定所有币种两位小数。时间存 UTC，展示时按租户/门店时区转换。软删除不适合库存流水、支付记录、订单快照等财务/审计事实数据。
 
 ## 6. 关键业务流程与一致性
 
 ### 下单、库存和支付
 
-建议拆为明确的应用用例：校验购物车与价格 → 计算促销/运费/税费 → 在数据库事务中创建订单快照并预占库存 → 提交事务后由 Outbox 投递支付/通知任务 → 接收已验签支付回调并幂等更新支付状态 → 按履约策略确认订单或释放库存。具体“先支付还是先占库存”、预占超时和取消补偿需结合渠道时延与业务策略定稿。
+建议流程：校验购物车与价格 → 计算促销/运费/税费 → 在短数据库事务中幂等创建订单快照并预占库存 → 同事务写 Outbox → 提交后 worker 发起支付 → 支付回调验签并幂等更新支付/订单状态。库存何时转为物理出库由履约策略决定，付款成功不应一概等同已出库。
 
 - 事务使用数据库行锁/条件更新保护库存；不能把 Redis 锁当作库存最终一致性的唯一保障。
-- 请求幂等键需按租户、客户端/操作和有效期唯一约束；重复请求返回已有结果，不重复扣款/下单。
+- 请求幂等键按租户、客户端/操作和有效期唯一约束；重复请求返回已有结果，不重复扣款/下单。
 - 外部支付调用不能放在持有长事务/行锁期间；回调校验签名、金额、币种、商户号、订单关联、时间戳和事件唯一性。
 - 退款、关单、支付成功竞态定义明确规则，所有状态转换记录操作者、来源、时间和原因。
 - Outbox 与业务数据在同一数据库事务写入；后台 worker 至少一次投递，消费者必须幂等。失败进入可观测的重试/死信流程。
 
 ### O2O
 
-结算时显式绑定 `sales_channel` 和履约方式（配送/到店自提/门店发货），记录服务门店、库存仓���地址快照。门店可售库存与中央仓库存分开管理；配送范围、营业时间、截单和自提核销规则单独建模。不能把“门店”仅做成商品字段或订单备注。
+结算时显式绑定 `sales_channel` 和履约方式（配送/到店自提/门店发货），记录服务��店、库存仓和地址快照。门店可售库存与中央仓库存分开管理；配送范围、营业时间、截单和自提核销规则单独建模。
 
 ### 分销
 
@@ -116,12 +117,12 @@ routes/api.php
 
 必须优先覆盖：跨租户读写隔离、不同角色权限、重复下单幂等、库存并发预占/释放、价格/优惠快照、支付重复/乱序回调、退款与佣金冲回、队列重试和失败处理、迁移可重复执行。
 
-CI 建议顺序：依赖安装与缓存 → Pint 检查 → Larastan/PHPStan → Pest（测试数据库）→ migration fresh/seed 检查 → 构建部署制品。生产发布前备份并验证恢复，迁移采用向前兼容策略；队列 worker 在发布时平滑重启。Secrets 不进入仓库，提供 `.env.example` 和本地开发/生产部署说明。
+CI 建议顺序：Composer 校验与安全审计 → Pint → Larastan/PHPStan → Pest（真实 MySQL/Redis 测试环境）→ migration fresh/seed 检查 → 构建部署制品。生产发布前备份并验证恢复，迁移采用向前兼容策略。
 
 ## 9. 建议实施顺序
 
-1. **工程基座**：Laravel 13、CI、环境配置、日志、健康检查、租户/成员/角色、租户隔离测试、Filament 两个 Panel。
-2. **商品与门店**：渠道、门店、商品/SKU、价格、媒体、仓库；��实现后台管理和公开只读 API。
+1. **工程基座**：Laravel 13、PHP 8.4、Composer lock、CI、环境配置、日志、健康检查、租户/成员/角色、租户隔离测试、Filament 两个 Panel。
+2. **商品与门店**：渠道、门店、商品/SKU、价格、媒体、仓库；实现后台管理和公开只读 API。
 3. **库存与订单**：库存流水/预占、购物车、结算、订单快照、状态流转、取消与超时释放。
 4. **支付与履约**：支付适配接口、沙箱渠道、幂等回调、退款、配送/自提履约、通知。
 5. **促销与分销**：优惠券/促销、佣金账本、退款冲回、结算对账。
@@ -129,23 +130,24 @@ CI 建议顺序：依赖安装与缓存 → Pint 检查 → Larastan/PHPStan →
 
 每个阶段交付可运行代码、迁移、测试、API 文档和操作说明；不要一次性堆出无测试的大型“全功能”实现。
 
-## 10. 可复用的用例代码样式
+## 10. 可复用的用例边界样式
 
-以下是边界示意，不可直接当作已存在的项目实现。金额对象/模型命名以实际代码为准。副作用在事务提交后通过 Outbox 或 after-commit 机制可靠处理。
+以下仅表示分层边界，不是可直接运行的完整实现；真实流程须由可测试的定价、库存、幂等和 Outbox 组件实现。
 
 ```php
 final class PlaceOrder
 {
     public function handle(PlaceOrderData $data, TenantContext $tenant): Order
     {
-        return DB::transaction(function () use ($data, $tenant) {
-            // 从可信的租户上下文取 tenant_id；不要信任请求体中的租户 ID。
-            // 重新核价并锁定库存，创建订单行快照和库存预占。
-            // 用数据库唯一约束保障幂等；写入订单事件 outbox。
+        return DB::transaction(function () use ($data, $tenant): Order {
+            // tenant ID 来自可信上下文。
+            // 重新核价；按固定顺序锁定库存并创建预占。
+            // 使用数据库唯一键处理幂等请求。
+            // 写订单/行快照/状态历史/Outbox 同事务提交。
             return $this->orders->placeForTenant($tenant->id(), $data);
         });
     }
 }
 ```
 
-实际实现应将“重新核价、库存预占、订单持久化、幂等冲突返回、Outbox 消费”拆成可测试的小组件；测试重复请求只生成一个订单，并验证任何库存不足/租户不匹配都会整体回滚。
+实际实现应将订单创建、库存预占、渠道支付、回调、Outbox 消费拆为可测试组件；验证重复提交只产生一个订单，并确保库存不足或租户不匹配时整个本地事务回滚。
