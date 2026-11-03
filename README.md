@@ -8,7 +8,7 @@ Laravel 13 + Filament 电商 SaaS（在线电商、O2O、分销）参考实现�
 
 - **后端**：Laravel 13、PHP 8.3+；模块化单体，按业务域组织代码。
 - **管理后台**：Filament（选择与 Laravel 13 兼容的稳定版本），平台运营后台与租户商家后台分离授权。
-- **数据**：MySQL 8.4 LTS（默认推荐）或 PostgreSQL；Redis 用于缓存、队列、限流和分布式锁；所有金额用最小货币单位整数存储。
+- **数据**：MySQL 8.4 LTS；Redis 用于缓存、队列和限流。Redis 锁可用于协调，但库存正确性由数据库事务、约束和并发控制保障；所有金额用最小货币单位整数存储。
 - **异步任务**：Laravel Queue + Redis，生产环境使用 Horizon；订单、支付、库存等事件通过事务发件箱（outbox）可靠投递。
 - **文件**：S3 兼容对象存储；数据库只保存对象键和元数据。
 - **API**：REST `/api/v1`、OpenAPI 文档；Laravel Sanctum 适合自有 App/前端，开放给第三方时再采用 OAuth 2.0。
@@ -18,6 +18,7 @@ Laravel 13 + Filament 电商 SaaS（在线电商、O2O、分销）参考实现�
 ## 文档
 
 - [技术选型：总览、对比与版本决策](doc/technology-selection.md)
+- [系统架构图、模块目录与数据库表结构初稿](doc/architecture-blueprint.md)
 - [架构决策、领域模型、约定、示例与实施路线](docs/architecture.md)
 
 ## 核心原则
