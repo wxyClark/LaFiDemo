@@ -8,7 +8,7 @@
 - **应用栈**：Laravel 13、Filament 5、MySQL 8.4 LTS、Redis、Pest 4；所有 Composer 约束须经依赖解析和 CI 验证。版本依据 `composer.json`/`composer.lock` 和官方兼容矩阵，不得臆造或无评审升级主版本。
 - **架构**：模块化单体。API、Filament 页面与队列任务复用应用用例，不在各入口重复实现业务规则；禁止无评审新增微服务或通用抽象框架。
 - **组件决策**：详见 `docs/architecture-components.md`。生产支付凭据仅通过 Secret 管理注入；支付 SDK 必须置于渠道适配器后并经沙箱验证。
-- 需求涉及已决定的架构、领域模型或技术选择时，阅读 `docs/architecture.md`、`doc/architecture-blueprint.md`、`doc/technology-selection.md` 和 `docs/rules/`。
+- 需求涉及已决定的架构、领域模型或技术选择时，阅读 `docs/architecture.md`、`docs/architecture-blueprint.md`、`docs/technology-selection.md` 和 `docs/rules/`。
 
 ## 必须遵守
 

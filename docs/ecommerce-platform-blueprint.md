@@ -114,7 +114,7 @@ Route / Filament Action
 
 ## 5. 领域模型与表结构方向
 
-这是模型边界摘要；详细字段草图见 [`../doc/architecture-blueprint.md`](../doc/architecture-blueprint.md)，实施时以 migration 和批准 ADR 为准。
+这是模型边界摘要；详细字段草图见 [`../docs/architecture-blueprint.md`](../docs/architecture-blueprint.md)，实施时以 migration 和批准 ADR 为准。
 
 | 领域 | 核心实体/建议表 | 关键要求 |
 | --- | --- | --- |
