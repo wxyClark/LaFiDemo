@@ -67,6 +67,7 @@ jobs:
 
       - name: Migration + seed on MySQL 8.4
         env:
+          APP_KEY: base64:NZEYslvAw/xMPiqZ7VgqWA0A9WMIH8yXvF8j5DXd4so=
           DB_CONNECTION: mysql
           DB_HOST: 127.0.0.1
           DB_PORT: '3306'
