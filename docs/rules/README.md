@@ -1,12 +1,13 @@
 # 开发规范索引
 
-本文档集为 LaFiDemo 项目的工程约定，适用于代码、测试、数据结构、管理后台、API、部署及协作流程。规范参考 PHP、Laravel、Filament、MySQL、Redis、Pest 官方文档中的通用最佳实践，并结合电商 SaaS 的多租户、订单、库存、支付和审计风险制定。
+本文档集为 LaFiDemo 项目的工程约定，适用于代码、测试、数据结构、管理后台、API、部署及协作流程。规范参考 PHP、Laravel、Filament、MySQL、Redis、Pest 等官方文档和成熟工程实践，并按项目架构做取舍。
 
-> “国内大厂规范”并非单一公开标准。本规范吸收成熟团队常见工程实践（代码审查、最小权限、可观测性、灰度/回滚、兼容性、自动化质量门禁），不声称代表任何特定公司的内部制度。
+> “国内大厂规范”并非单一公开标准。本规范吸收成熟团队常见工程实践（代码审查、最小权限、可观测性、灰度/回滚、兼容性、自动化质量门禁等），不声称复制某一家公司的内部规范。
 
 ## 文件
 
 - [`coding-standards.md`](coding-standards.md)：PHP 8.4+、Laravel 13、模块边界、Filament、API 约定。
+- [`application-flow-and-data-access.md`](application-flow-and-data-access.md)：应用调用链路、输出转换、共享代码、Service/定时任务、Repository/批处理、基类和字典表取舍。
 - [`data-and-cache.md`](data-and-cache.md)：MySQL 8.4、Redis、事务、索引、库存一致性与队列。
 - [`testing-security.md`](testing-security.md)：Pest、质量门禁、安全、租户隔离和隐私。
 - [`delivery-and-operations.md`](delivery-and-operations.md)：Git/PR、CI、迁移发布、可观测性、备份与回滚。
@@ -23,4 +24,4 @@
 
 ## 适用与更新
 
-开始任务先阅读根目录 `AGENTS.md` 和相关专项文档。规范随项目成熟迭代；规则变更需代码评审，并同步更新示例、CI 或模板，避免文档与实际检查脱节。依赖版本以 `composer.lock`、镜像摘要和 CI 配置为准，不在规范中复制动态版本号。
+开始任务先阅读根目录 `AGENTS.md` 和相关 `docs/rules/`、架构及技术选型文档。规范随项目成熟迭代；规则变更需代码评审，并同步更新示例、CI 或模板，避免文档与实际检查脱节。
