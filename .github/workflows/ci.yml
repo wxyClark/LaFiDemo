@@ -62,8 +62,18 @@ jobs:
         run: vendor/bin/pest
 
       - name: Redis smoke check
-        run: >-
-          php -r '$r=new Redis(); exit(($r->connect("127.0.0.1",6379)&&str_contains($r->ping(),"PONG"))?0:1);'
+        run: |
+          php -r '
+          if (!class_exists("Redis")) { fwrite(STDERR, "phpredis extension missing\n"); exit(1); }
+          $r = new Redis();
+          $connected = @$r->connect("127.0.0.1", 6379);
+          var_dump($connected);
+          $pong = @$r->ping();
+          var_dump($pong);
+          if ($connected && is_string($pong) && str_contains($pong, "PONG")) { echo "Redis OK\n"; exit(0); }
+          fwrite(STDERR, "Redis smoke check failed\n");
+          exit(1);
+          '
 
       - name: Migration + seed on MySQL 8.4
         env:
