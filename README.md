@@ -6,7 +6,7 @@ Laravel 13 + Filament 电商 SaaS（在线电商、O2O、分销）参考实现�
 
 ## 技术路线
 
-- **PHP**：生产采用 PHP 8.4 最新安全补丁版；Composer 最低约束 PHP 8.4.3。PHP 8.3 不作为本项目部署基线，详见 [组件与运行时决策](docs/architecture-components.md)。
+- **PHP**：生产采用 PHP 8.4 最新安全补丁版；Composer 最低约束 PHP 8.4.3。PHP 8.3 不作为本项目部署基线，详见 [组件与运行时决策](docs/architecture/architecture-components.md)。
 - **后端**：Laravel 13，模块化单体，按业务域组织代码。
 - **管理后台**：与 Laravel 13 兼容的 Filament 5；平台运营后台与租户商家后台分离授权。
 - **数据**：MySQL 8.4 LTS；Redis 用于缓存、队列和限流。库存正确性由数据库事务、约束和并发控制保障；金额以最小货币单位整数持久化，使用 Brick Money 等精确计算策略。
@@ -20,9 +20,9 @@ Laravel 13 + Filament 电商 SaaS（在线电商、O2O、分销）参考实现�
 - [开发规范总览](docs/rules/README.md)
 - [技术选型：总览、对比与版本决策](docs/technology-selection.md)
 - [系统架构图、模块目录与数据库表结构初稿](docs/architecture-blueprint.md)
-- [电商平台总体方案与实施蓝图](docs/ecommerce-platform-blueprint.md)
-- [组件与 PHP 运行时决策](docs/architecture-components.md)
-- [架构决策、领域模型、约定、示例与实施路线](docs/architecture.md)
+- [电商平台总体方案与实施蓝图](docs/architecture/ecommerce-platform-blueprint.md)
+- [组件与 PHP 运行时决策](docs/architecture/architecture-components.md)
+- [架构决策、领域模型、约定、示例与实施路线](docs/architecture/architecture.md)
 - [AI 辅助开发流程与提示词](docs/prompts/README.md)
 
 ## 核心原则

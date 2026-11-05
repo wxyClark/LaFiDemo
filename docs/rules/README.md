@@ -11,8 +11,8 @@
 - [`data-and-cache.md`](data-and-cache.md)：MySQL 8.4、Redis、事务、索引、库存一致性与队列。
 - [`testing-security.md`](testing-security.md)：Pest、质量门禁、安全、租户隔离和隐私。
 - [`delivery-and-operations.md`](delivery-and-operations.md)：Git/PR、CI、迁移发布、可观测性、备份与回滚。
-- [`../architecture-components.md`](../architecture-components.md)：PHP 8.4 运行时、CVE-2024-4577 安全要求和基础 Composer 组件决策。
-- [`../ecommerce-platform-blueprint.md`](../ecommerce-platform-blueprint.md)：电商 SaaS 系统总体方案与实施路线。
+- [`../architecture/architecture-components.md`](../architecture/architecture-components.md)：PHP 8.4 运行时、CVE-2024-4577 安全要求和基础 Composer 组件决策。
+- [`../architecture/ecommerce-platform-blueprint.md`](../architecture/ecommerce-platform-blueprint.md)：电商 SaaS 系统总体方案与实施路线。
 
 仓库根目录 [`AGENTS.md`](../../AGENTS.md) 是面向所有贡献者和自动化编码代理的全局摘要。它要求先遵循此处规范，并确保测试/检查结果如实报告。
 

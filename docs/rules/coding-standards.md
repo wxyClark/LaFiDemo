@@ -15,7 +15,7 @@
 
 ### 依赖管理
 
-- PHP 生产运行最低版本为 8.4.3，生产推荐 PHP 8.4 最新安全补丁版；详情见 [`../architecture-components.md`](../architecture-components.md)。提交 `composer.lock`；应用使用 `composer install`，不使用 `composer update` 作为部署步骤。
+- PHP 生产运行最低版本为 8.4.3，生产推荐 PHP 8.4 最新安全补丁版；详情见 [`../architecture/architecture-components.md`](../architecture/architecture-components.md)。提交 `composer.lock`；应用使用 `composer install`，不使用 `composer update` 作为部署步骤。
 - 加依赖前确认维护状态、许可证、安全公告、PHP/Laravel/Filament 支持范围、传递依赖和替代方案。禁止提交 vendor 目录。
 - Composer 脚本和自动加载遵循 Laravel Composer 结构；生产环境按部署要求使用优化自动加载和排除开发依赖。
 

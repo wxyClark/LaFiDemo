@@ -10,7 +10,7 @@
 
 | 领域 | 选择 | 边界/理由 |
 | --- | --- | --- |
-| PHP | PHP 8.4 最新安全补丁；最低约束 8.4.3 | 8.4.3 是 PHP-CGI CVE-2024-4577 修复下限，不是生产推荐补丁。组件组合以 `docs/architecture-components.md` 为准。 |
+| PHP | PHP 8.4 最新安全补丁；最低约束 8.4.3 | 8.4.3 是 PHP-CGI CVE-2024-4577 修复下限，不是生产推荐补丁。组件组合以 `docs/architecture/architecture-components.md` 为准。 |
 | 框架/后台 | Laravel 13、Filament 5 兼容版 | 模块化单体；Filament 只负责管理交互，不是授权边界。 |
 | 主库 | MySQL 8.4 LTS | 订单/库存/支付事实、约束和本地事务的权威存储。 |
 | 缓存/异步 | Redis + Laravel Cache/Queue；生产可用 Horizon | 缓存/锁不作为库存、支付或财务的事实来源。 |
@@ -114,7 +114,7 @@ Route / Filament Action
 
 ## 5. 领域模型与表结构方向
 
-这是模型边界摘要；详细字段草图见 [`../docs/architecture-blueprint.md`](../docs/architecture-blueprint.md)，实施时以 migration 和批准 ADR 为准。
+这是模型边界摘要；详细字段草图见 [`../architecture-blueprint.md`](../architecture-blueprint.md)，实施时以 migration 和批准 ADR 为准。
 
 | 领域 | 核心实体/建议表 | 关键要求 |
 | --- | --- | --- |
@@ -216,5 +216,5 @@ Payment adapter、微信/支付宝沙箱、回调验签与去重、退款；配�
 
 ## 10. 来源与设计参考
 
-- 项目内部基线：[`docs/architecture.md`](architecture.md)、[`docs/architecture-components.md`](architecture-components.md)、[`../doc/architecture-blueprint.md`](../doc/architecture-blueprint.md)、[`../doc/technology-selection.md`](../doc/technology-selection.md)、[`rules/`](rules/)。
+- 项目内部基线：[`docs/architecture/architecture.md`](architecture.md)、[`docs/architecture/architecture-components.md`](architecture-components.md)、[`../architecture-blueprint.md`](../architecture-blueprint.md)、[`../technology-selection.md`](../technology-selection.md)、[`../rules/`](../rules/)。
 - 框架、组件与安全支持以当前官方文档、包仓库和 PHP 安全公告为准。版本约束经过 Composer 实际解析并生成锁文件之前仅是目标范围，不是验证结果。
