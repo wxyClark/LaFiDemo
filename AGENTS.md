@@ -22,6 +22,10 @@
 8. **依赖与变更**：依赖必须兼容基线并锁定；只加解决明确需求的依赖。提交 `composer.lock`（尚未生成时不得声称安装验证通过）。数据库迁移向前兼容，遵循 expand-and-contract。
 9. **可观测性**：重要业务操作提供结构化日志/审计及 request/correlation ID，避免敏感数据。队列失败、支付异常和库存不变量破坏需能告警或追查。
 10. **文档同步**：影响架构、API 契约、表结构、配置、运维或开发流程时更新对应文档；公开 API 的不兼容变更必须升级版本或提供弃用期。
+11. **审查与放行**：审查意见按 Blocker / Must fix / Should fix / Nit 四级分级（唯一口径，见 `docs/rules/delivery-and-operations.md` 第 1 节）；Blocker/Must fix 清零前不得合并。安全/隐私审查（高风险领域强制）的放行条款见 `docs/rules/testing-security.md` "安全审查放行"。
+12. **质量门禁**：门禁命令以 `composer.json` `scripts` 段为单一事实来源，CI 与本地统一调用；CI 中 Pest 测试与迁移须同跑 MySQL 引擎。规则承诺见 `docs/rules/testing-security.md` 第 2 节。
+13. **Secret 扫描**：仓库须具备 secret 扫描门禁（gitleaks 类工具独立 CI job，落地前以 PR 自查清单兜底），误提交密钥须立即轮换。见 `docs/rules/testing-security.md` "Secret 扫描门禁"。
+14. **ADR 规范**：重大取舍、不可逆数据模型与跨模块依赖须记录 ADR，章节结构以 `docs/adr/TEMPLATE.md` 为唯一模板；`Proposed` 状态不代表已批准。见 `docs/rules/delivery-and-operations.md` 第 2 节。
 
 ## 代码提交与验收
 
