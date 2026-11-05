@@ -1,9 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:noNamespaceSchemaLocation="vendor/phpunit/phpunit/phpunit.xsd"
-         bootstrap="vendor/autoload.php"
-         colors="true"
+          bootstrap="vendor/autoload.php"
+          colors="true"
 >
+    <!-- 双引擎约定（docs/rules/testing-security.md）：本地测试默认 SQLite（:memory:，无需 MySQL）；
+         CI 中 .github/workflows/ci.yml 的 Pest 步骤通过进程 env 覆盖 DB_* 指向 MySQL 8.4 服务库
+         （migrate:fresh 先行），PHPUnit <env> 不强覆盖已存在的进程变量，故 CI 实际运行在 MySQL 上。 -->
     <testsuites>
         <testsuite name="Unit">
             <directory>tests/Unit</directory>

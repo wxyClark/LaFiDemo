@@ -65,6 +65,18 @@
             "Tests\\": "tests/"
         }
     },
+    "scripts": {
+        "test": "vendor/bin/pest",
+        "analyse": "vendor/bin/phpstan analyse",
+        "style": "vendor/bin/pint --test",
+        "audit": "composer audit",
+        "ci": [
+            "@audit",
+            "@style",
+            "@analyse",
+            "@test"
+        ]
+    },
     "config": {
         "optimize-autoloader": true,
         "preferred-install": "dist",
