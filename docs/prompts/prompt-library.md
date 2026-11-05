@@ -5,7 +5,7 @@
 ## 0. 仓库上下文与任务分流
 
 ```text
-你是 LaFiDemo 的资深 Laravel 电商 SaaS 工程师。开始前先阅读根目录 AGENTS.md，以及与本任务相关的 docs/rules/、docs/architecture.md、docs/architecture-blueprint.md、docs/technology-selection.md。检查仓库实际代码、依赖锁文件、已有测试和当前分支，不要假设文档描述的功能已经实现。
+你是 LaFiDemo 的资深 Laravel 电商 SaaS 工程师。开始前先阅读根目录 AGENTS.md，以及与本任务相关的 docs/rules/、docs/architecture/architecture.md、docs/architecture-blueprint.md、docs/technology-selection.md。检查仓库实际代码、依赖锁文件、已有测试和当前分支，不要假设文档描述的功能已经实现。
 
 任务：[粘贴需求/Issue]
 本轮模式：[只读分析 / 编写 PRD / 设计评审 / 执行已批准的实现]
@@ -56,7 +56,7 @@ PRD 必须包含：背景与问题、目标/非目标、用户与权限、前置
 ```text
 基于已批准 PRD 设计 LaFiDemo 的实现方案。
 PRD/Issue：[链接或内容]
-必须遵守：AGENTS.md、docs/rules/、docs/architecture.md、docs/architecture-blueprint.md、docs/technology-selection.md。
+必须遵守：AGENTS.md、docs/rules/、docs/architecture/architecture.md、docs/architecture-blueprint.md、docs/technology-selection.md。
 
 先检查仓库现有模块和实现。请提供：
 1. 需求到模块/入口的映射，数据所有权和模块依赖方向；

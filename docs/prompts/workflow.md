@@ -64,7 +64,7 @@ PRD 不要直接写成实现方案。描述用户可见行为和业务结果，�
 
 **输出：**上下文/时序或状态图、模块影响、数据表/索引草图、API/事件契约、事务与失败处理、威胁/隐私分析、测试策略、迁移发布方案、备选项。
 
-**放行：**订单/支付/库存等一致性决策明确；方案与 `docs/architecture.md`、`docs/architecture-blueprint.md`、`docs/technology-selection.md` 不冲突，或有 ADR 解释变更。
+**放行：**订单/支付/库存等一致性决策明确；方案与 `docs/architecture/architecture.md`、`docs/architecture-blueprint.md`、`docs/technology-selection.md` 不冲突，或有 ADR 解释变更。
 
 ### 阶段 4：方法评审 / ADR
 
