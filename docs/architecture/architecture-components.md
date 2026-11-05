@@ -1,6 +1,6 @@
 # PHP 运行时与 Composer 基础组件决策
 
-> 状态：项目基线决策（2026-11-03）。本文件补充 [`architecture.md`](architecture.md) 和 [`../architecture-blueprint.md`](../architecture-blueprint.md) 的运行时与基础组件选型。仓库现阶段仍没有完整 Laravel 应用骨架；新增 `composer.json` 仅声明依赖边界，尚未运行 Composer 解析，也未生成 `composer.lock`。
+> 状态：项目基线决策（2026-11-03）。本文件补充 [`architecture.md`](architecture.md) 和 [`../architecture-blueprint.md`](../architecture-blueprint.md) 的运行时与基础组件选型。Laravel 应用骨架与 `composer.lock` 已随 init 提交落地，`composer.json` 声明依赖边界且已通过 Composer 解析锁定；后续组件新增仍以本文件为唯一出处。
 
 ## 1. PHP 版本决策
 
