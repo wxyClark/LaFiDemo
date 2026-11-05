@@ -1,8 +1,8 @@
 # ADR-0001 模块目录结构与跨模块调用规则
 
-> 状态：**Proposed**（未批准；按 prompt-library §5 模板起草，不代表已定案）
+> 状态：**Approved**
 > 起草：2026-11-05，基础架构评审任务
-> 决策人 / 批准日期：待填
+> 决策人 / 批准日期：wxyClark（项目负责人）/ 2026-11-05（按项目持续指令批准；批准范围限于本 ADR 拟议决策 a-h 条）
 
 ## 背景
 
@@ -98,9 +98,31 @@ h. **Filament**：双 Panel 入口保持 `app/Filament/Platform/`、`app/Filamen
 
 ## 决策人 / 日期
 
-待填（架构/技术负责人）。
+wxyClark（项目负责人）/ 2026-11-05 批准（按项目持续指令；复核触发条件见上节）。
 
 ## 与既有规则的关系
 
 - 与 `docs/rules/coding-standards.md:35-41`、`application-flow-and-data-access.md:24,39`、AGENTS.md:16"业务边界"无冲突；本 ADR 是其目录级落实。
 - 若实现中发现 rules 与本 ADR 冲突（如未来 Shared 扩容），以 rules 为准并更新本 ADR（AGENTS.md:3 冲突顺序：安全/法律 > AGENTS.md > 技术专项规则）。
+
+## 实现附注（模块基线落地，2026-11-05）
+
+首个业务模块（Tenancy + Catalog + Inventory 基线）按 a-h 条落地时发现的微调点，
+不改变已批准决策本身：
+
+- b 条"最低形态"在简单模块中的实际取法：Tenancy 无独立持久化边界，
+  Eloquent 实体 `Tenant` 落在 `Tenancy/Domain/`（任务基线指令口径）；
+  Catalog/Inventory 的 Eloquent 模型落在各自 `Infrastructure/`。两种取法均符合
+  "简单模块可省略 Domain 层，不机械四层"的精神；后续新模块按"实体在 Domain、
+  持久化实现/队列适配在 Infrastructure"执行即可，无需二次评审。
+- 表名口径：blueprint §5.3 建议 `inventory_balances`/`inventory_movements`，
+  任务基线指令采用 `stock`/`stock_ledger`（字段方向不变：balance 投影 + 只追加流水、
+  幂等键租户作用域、审计字段 who/when/why/source ref）。迁移注释已双向标注，
+  未来若对齐 blueprint 命名走 expand-and-contract 迁移改名。
+- 模块模型的 Eloquent 工厂绑定：框架默认工厂命名约定（`App\Models\*` →
+  `Database\Factories\*`）不适用于 `app/Modules/` 下模型，已用
+  `#[UseFactory(...)]` attribute（Laravel 13）在模型上显式绑定工厂类，
+  工厂同时保留显式 `modelName()` 返回模块模型类。
+- 遗留项（记录在基线 PR 报告，不在本 ADR 展开）：`users` 表归属（ADR 后果节已预见，
+  暂留骨架 `App\Models`，membership/roles 归 Tenancy）；TenantContext 的成员关系
+  解析（等认证模块）；Filament 双 Panel（`app/Filament/Platform|Tenant`，等后台任务）。
