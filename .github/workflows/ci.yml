@@ -66,13 +66,30 @@ jobs:
           php -r '
           if (!class_exists("Redis")) { fwrite(STDERR, "phpredis extension missing\n"); exit(1); }
           $r = new Redis();
-          $connected = @$r->connect("127.0.0.1", 6379);
-          var_dump($connected);
-          $pong = @$r->ping();
-          var_dump($pong);
-          if ($connected && is_string($pong) && str_contains($pong, "PONG")) { echo "Redis OK\n"; exit(0); }
-          fwrite(STDERR, "Redis smoke check failed\n");
-          exit(1);
+          try {
+              $connected = $r->connect("127.0.0.1", 6379, 2.0);
+          } catch (Throwable $e) {
+              fwrite(STDERR, "Redis smoke check: connect threw " . get_class($e) . ": " . $e->getMessage() . "\n");
+              exit(1);
+          }
+          if ($connected === false) {
+              fwrite(STDERR, "Redis smoke check: connect returned false\n");
+              exit(1);
+          }
+          $key = "lafi_ci_smoke_" . getmypid();
+          try {
+              $r->setex($key, 30, "lafi");
+              $value = $r->get($key);
+              $r->del($key);
+          } catch (Throwable $e) {
+              fwrite(STDERR, "Redis smoke check: round-trip threw " . get_class($e) . ": " . $e->getMessage() . "\n");
+              exit(1);
+          }
+          if ($value !== "lafi") {
+              fwrite(STDERR, "Redis smoke check: setex/get round-trip mismatch\n");
+              exit(1);
+          }
+          echo "Redis OK (setex/get round-trip verified)\n";
           '
 
       - name: Migration + seed on MySQL 8.4
