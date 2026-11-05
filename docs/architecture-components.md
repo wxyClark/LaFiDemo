@@ -8,7 +8,8 @@
 
 - 项目最低 PHP 版本：**8.4.3**（Composer 约束 `^8.4.3`）。
 - 推荐生产运行时：**PHP 8.4 分支最新可用安全补丁版**，并固定到受控容器镜像摘要/发行包；不得把 8.4.3 当作生产补丁目标，它只是最低安全/兼容基线。
-- 本项目不以 PHP 8.3 作为部署运行时。虽然 Laravel 13 本身接受 PHP `^8.3`，本项目选择 OpenSpout 5.x 等组件后整体最低要求提高到 PHP 8.4；减少双运行时差异，也能使用组件当前维护线。
+- 本项目不以 PHP 8.3 作为部署运行时。虽然 Laravel 13 本身接受 PHP `^8.3`，本项目选择 OpenSpout 等组件后整体最低要求提高到 PHP 8.4；减少双运行时差异，也能使用组件当前维护线。
+- 2026-11-03 依赖解析修订：Filament 5 的 `filament/actions` 传递锁定 `openspout/openspout ^4.23`，与 5.x 主版本互斥，根约束由 `^5.13` 对齐为 `^4.23`（流式 CSV/XLSX 导出能力不变，5.x 相对 4.x 无本项目所需的 API 增益；后续如 Filament 升级支持 5.x 再回迁）。
 - CI 首先验证与生产一致的 PHP 8.4 最新补丁环境。只有当团队确实需要支持 8.3 的其他应用包时，才单独评估兼容分支；不得为此降低本项目根 Composer 约束或放宽安全要求。
 
 ### PHP2Shell / CVE-2024-4577 安全要求
@@ -35,7 +36,7 @@ PHP2Shell 通常指 CVE-2024-4577 PHP-CGI 参数注入漏洞。PHP 官方修复�
 | 后台面板/RBAC | `filament/filament ^5.0` + Laravel Policy/Gate | 运行时 | 先用框架原生 Policy/Gate 和 membership 角色关联实现授权边界；Filament UI 隐藏不是授权。若 RBAC 管理需求变复杂，再评估权限包并检查 Laravel 13 兼容，不因缩写 RBAC 预先引入未验证插件。 |
 | 会话/API 认证 | `laravel/sanctum ^4.0` | 运行时 | 第一方客户端认证；身份认证与租户/资源授权分离。 |
 | 异步任务运维 | `laravel/horizon ^5.50` | 运行时 | Redis Queue 的管理与观测；可靠业务事件仍需 Outbox 和幂等消费。 |
-| Excel/XLSX 与 CSV | `openspout/openspout ^5.13` | 运行时 | 流式读写，适合大数据量导出且内存占用更可控。CSV 可以流式生成；需复杂公式/模板/宏时再专项评估 PhpSpreadsheet/Maatwebsite Excel。导出应后台队列化，限定租户范围，防止 CSV formula injection，使用安全文件名和短期下载链接。 |
+| Excel/XLSX 与 CSV | `openspout/openspout ^4.23` | 运行时 | 流式读写，适合大数据量导出且内存占用更可控。CSV 可以流式生成；需复杂公式/模板/宏时再专项评估 PhpSpreadsheet/Maatwebsite Excel。导出应后台队列化，限定租户范围，防止 CSV formula injection，使用安全文件名和短期下载链接。版本与 Filament 5 传递约束（^4.23）对齐，见 §1 依赖解析修订。 |
 | PDF | `barryvdh/laravel-dompdf ^3.1` | 运行时 | Laravel 集成和 HTML 模板开发方便，适用于订单/简单报表。中文字体、远程资源、SVG 和复杂分页需验证；关闭不必要远程资源访问、限制本地文件根目录和输入内容。高并发/复杂排版可另评估独立渲染服务。 |
 | 微信支付 + 支付宝 | `yansongda/pay ^3.7.20` | 运行时 | 单一渠道适配 SDK 覆盖常见微信支付/支付宝流程，减少双 SDK 和重复验签逻辑。将 SDK 包装在项目 `Payment` 模块的统一 adapter 后；支付签名、通知验签、金额币种校验、幂等、退款与沙箱测试仍由应用规则把关。最低采用包含已知安全修复的版本，安装时仍需 `composer audit`。 |
 | 二维码生成 | `chillerlan/php-qrcode ^5.0` | 运行时 | 用于支付/自提核销等 QR 内容生成；二维码只承载短期 token/URL，不放个人信息或长期可复用密钥。服务端保存 token 哈希、设置有效期、限流并校验权限。二维码不是授权本身。 |

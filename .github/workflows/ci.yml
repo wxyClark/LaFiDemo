@@ -1,0 +1,105 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  quality:
+    name: PHP 8.4 / Laravel 13
+    runs-on: ubuntu-latest
+    services:
+      mysql:
+        image: mysql:8.4
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: lafi_ci
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping --silent"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
+      redis:
+        image: redis:8
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd="redis-cli ping"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up PHP 8.4
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: bcmath, ctype, dom, fileinfo, filter, gd, hash, intl, json, libxml, mbstring, openssl, pdo, pdo_mysql, pdo_sqlite, sqlite3, redis, session, simplexml, tokenizer, xmlreader, zip, zlib
+          coverage: none
+
+      - name: Composer install (lock)
+        uses: ramsey/composer-install@v3
+
+      - name: Validate composer files
+        run: composer validate
+
+      - name: Composer audit
+        run: composer audit
+
+      - name: Pint (code style)
+        run: vendor/bin/pint --test
+
+      - name: Larastan (static analysis)
+        run: vendor/bin/phpstan analyse
+
+      - name: Pest (tests)
+        run: vendor/bin/pest
+
+      - name: Redis smoke check
+        run: |
+          php -r '
+          if (!class_exists("Redis")) { fwrite(STDERR, "phpredis extension missing\n"); exit(1); }
+          $r = new Redis();
+          try {
+              $connected = $r->connect("127.0.0.1", 6379, 2.0);
+          } catch (Throwable $e) {
+              fwrite(STDERR, "Redis smoke check: connect threw " . get_class($e) . ": " . $e->getMessage() . "\n");
+              exit(1);
+          }
+          if ($connected === false) {
+              fwrite(STDERR, "Redis smoke check: connect returned false\n");
+              exit(1);
+          }
+          $key = "lafi_ci_smoke_" . getmypid();
+          try {
+              $r->setex($key, 30, "lafi");
+              $value = $r->get($key);
+              $r->del($key);
+          } catch (Throwable $e) {
+              fwrite(STDERR, "Redis smoke check: round-trip threw " . get_class($e) . ": " . $e->getMessage() . "\n");
+              exit(1);
+          }
+          if ($value !== "lafi") {
+              fwrite(STDERR, "Redis smoke check: setex/get round-trip mismatch\n");
+              exit(1);
+          }
+          echo "Redis OK (setex/get round-trip verified)\n";
+          '
+
+      - name: Migration + seed on MySQL 8.4
+        env:
+          APP_ENV: testing
+          APP_KEY: base64:NZEYslvAw/xMPiqZ7VgqWA0A9WMIH8yXvF8j5DXd4so=
+          DB_CONNECTION: mysql
+          DB_HOST: 127.0.0.1
+          DB_PORT: '3306'
+          DB_DATABASE: lafi_ci
+          DB_USERNAME: root
+          DB_PASSWORD: root
+        run: php artisan migrate:fresh --seed
