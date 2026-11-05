@@ -58,7 +58,28 @@ jobs:
       - name: Larastan (static analysis)
         run: vendor/bin/phpstan analyse
 
-      - name: Pest (tests)
+      - name: Migration + seed on MySQL 8.4
+        env:
+          APP_ENV: testing
+          APP_KEY: base64:NZEYslvAw/xMPiqZ7VgqWA0A9WMIH8yXvF8j5DXd4so=
+          DB_CONNECTION: mysql
+          DB_HOST: 127.0.0.1
+          DB_PORT: '3306'
+          DB_DATABASE: lafi_ci
+          DB_USERNAME: root
+          DB_PASSWORD: root
+        run: php artisan migrate:fresh --seed
+
+      - name: Pest (tests, MySQL CI db)
+        env:
+          APP_ENV: testing
+          APP_KEY: base64:NZEYslvAw/xMPiqZ7VgqWA0A9WMIH8yXvF8j5DXd4so=
+          DB_CONNECTION: mysql
+          DB_HOST: 127.0.0.1
+          DB_PORT: '3306'
+          DB_DATABASE: lafi_ci
+          DB_USERNAME: root
+          DB_PASSWORD: root
         run: vendor/bin/pest
 
       - name: Redis smoke check
@@ -91,15 +112,3 @@ jobs:
           }
           echo "Redis OK (setex/get round-trip verified)\n";
           '
-
-      - name: Migration + seed on MySQL 8.4
-        env:
-          APP_ENV: testing
-          APP_KEY: base64:NZEYslvAw/xMPiqZ7VgqWA0A9WMIH8yXvF8j5DXd4so=
-          DB_CONNECTION: mysql
-          DB_HOST: 127.0.0.1
-          DB_PORT: '3306'
-          DB_DATABASE: lafi_ci
-          DB_USERNAME: root
-          DB_PASSWORD: root
-        run: php artisan migrate:fresh --seed
