@@ -34,7 +34,7 @@
 - 测试名称、断言和注释说明业务意图；一个测试尽量聚焦一个主要行为，可使用 dataset 覆盖清晰的边界集合。
 - 修复 Bug 时先添加能复现旧错误的测试，再实现修复。
 
-## 2. 质��工具与 CI
+## 2. 质量工具与 CI
 
 项目初始化后将命令写入 `composer.json`/CI，并保持单一事实来源。推荐门禁：
 
@@ -53,6 +53,35 @@ php artisan migrate:fresh --seed --env=testing
 - 主干分支保护要求 review；涉及支付、租户隔离、权限、迁移和密钥处理的变更需对应领域 reviewer。
 - CI 日志应隐藏 secrets；不将 `.env`、数据库 dump、外部 API 真实响应样本作为 artifacts。
 - 质量门禁新增规则时先修复或有期限地管理已有基线，禁止无限添加忽略项。
+
+### 测试与迁移的数据库引擎一致性
+
+- CI 中 Pest 测试步骤与迁移/种子验证步骤必须运行在**同一数据库引擎**（MySQL 服务库）：Pest 步骤的 `DB_CONNECTION`/`DB_*` 环境变量须指向与 `migrate:fresh --seed` 相同的 MySQL 测试库；不得出现"测试跑 SQLite、迁移跑 MySQL"的双引擎组合。
+- 本地无 MySQL 环境时可用 SQLite `:memory:` 开发，但涉及 MySQL 特有约束/并发语义的测试（库存条件更新、唯一键、锁行为）必须以 CI 的 MySQL 结果为放行依据。
+- **验收**：CI 中 `vendor/bin/pest` 与 `php artisan migrate:fresh --seed` 使用同一 `DB_CONNECTION=mysql` 服务库；新增断言 `DB::connection()->getDriverName() === 'mysql'` 的架构测试可锁定该行为（建议随首个业务模块 PR 落地）。
+
+### 质量门禁命令单一事实来源
+
+- 门禁命令收敛为 `composer.json` 的 `scripts` 段（`test`、`analyse`、`style`、`audit`、`ci`），CI 各 step 调用 `composer test|analyse|style|audit`，不再在 `.github/workflows/` 中内联 `vendor/bin/...` 命令；本地开发与 CI 执行路径统一。
+- `composer validate` 一律使用 `--strict`。新增门禁工具时同步更新 `scripts` 段与 CI step，二者须保持一致；以 `scripts` 段为唯一事实来源。
+- **验收**：CI 工作流中不出现内联 `vendor/bin/` 命令（`composer scripts` 调用除外）；`composer validate --strict` 在 CI 实际执行。
+- 注：本条款为规则承诺；`.github/workflows/ci.yml` 与 `composer.json` 的实际改动另开 PR 实施，PR 描述须引用本条款。
+
+## 2.1 安全审查放行（Security Review Gate）
+
+- 安全/隐私审查（`docs/prompts/prompt-library.md` 模板 9）发现的问题按 `delivery-and-operations.md` 第 1 节四级严重度分级处理：
+  - **Blocker / Must fix**（如租户越权、Webhook 验签缺失、密钥泄漏路径、PII 明文落日志）：解决前**不得合并、不得发布**；负责人批准的豁免须记录风险与明确期限，且豁免不得覆盖租户隔离与支付/退款正确性。
+  - **Should fix / Nit**：可带期限豁免并记录（负责人、期限、验证方式），列入后续 PR；超出期限未处理自动升级为 Must fix。
+- 涉及支付、退款、库存、租户隔离、个人信息或生产密钥的变更，安全审查为**强制**步骤，放行条件与阶段 8 人工审查同步满足（CI 绿灯 + 必需 reviewer 批准 + Blocker 清零）。
+- **验收**：PR 描述中"安全影响"一栏列出审查结论与未决项；Blocker 未清零时 PR 不得标记 ready。
+
+## 2.2 Secret 扫描门禁
+
+- 仓库须具备 secret 扫描能力：推荐以 `gitleaks`（或同类工具）作为**独立 CI job**，扫描仓库文件与变更 diff；扫描失败阻断合并。独立 job 便于与质量门禁并行且具独立阻断语义。
+- 在自动化门禁落地前，以 PR 自查清单兜底：作者确认变更不含密钥、令牌、支付证书、个人信息样本；reviewer 对涉及 `config/`、`.env*`、证书/密钥路径的变更执行 `git diff` 人工核对。
+- 误提交密钥的处置：立即轮换/撤销，清理历史或重建分支，并在事故记录中留痕（参照本文第 3 节"密钥、数据与供应链"）。
+- **验收**：向分支提交一个含假密钥的文件并触发 CI，secret 扫描 job 失败且阻断合并。
+- 注：本条款为规则承诺；CI 实际新增扫描 job 另开 PR 实施，PR 描述须引用本条款。
 
 ## 3. 安全基线
 
