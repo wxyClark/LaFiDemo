@@ -35,6 +35,32 @@ class StockLedger extends Model
      */
     public const UPDATED_AT = null;
 
+    public int $id;
+
+    public int $tenant_id;
+
+    public int $variant_id;
+
+    public StockMovementType $movement_type;
+
+    public int $quantity_delta;
+
+    public int $quantity_before;
+
+    public int $quantity_after;
+
+    public string $idempotency_key;
+
+    public ?string $reference_type;
+
+    public ?int $reference_id;
+
+    public string $operator_type;
+
+    public ?int $operator_id;
+
+    public string $reason;
+
     /**
      * Get the attributes that should be cast.
      *
@@ -47,6 +73,10 @@ class StockLedger extends Model
             'quantity_delta' => 'int',
             'quantity_before' => 'int',
             'quantity_after' => 'int',
+            'tenant_id' => 'int',
+            'variant_id' => 'int',
+            'operator_id' => 'int',
+            'reference_id' => 'int',
         ];
     }
 }

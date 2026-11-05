@@ -22,6 +22,16 @@ class Stock extends Model
     /** @use HasFactory<StockFactory> */
     use HasFactory;
 
+    public int $id;
+
+    public int $tenant_id;
+
+    public int $variant_id;
+
+    public int $on_hand;
+
+    public int $version;
+
     /**
      * Get the attributes that should be cast.
      *
