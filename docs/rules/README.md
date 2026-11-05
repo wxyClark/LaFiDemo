@@ -9,8 +9,8 @@
 - [`coding-standards.md`](coding-standards.md)：PHP 8.4+、Laravel 13、模块边界、Filament、API 约定。
 - [`application-flow-and-data-access.md`](application-flow-and-data-access.md)：应用调用链路、输出转换、共享代码、Service/定时任务、Repository/批处理、基类和字典表取舍。
 - [`data-and-cache.md`](data-and-cache.md)：MySQL 8.4、Redis、事务、索引、库存一致性与队列。
-- [`testing-security.md`](testing-security.md)：Pest、质量门禁、安全、租户隔离和隐私。
-- [`delivery-and-operations.md`](delivery-and-operations.md)：Git/PR、CI、迁移发布、可观测性、备份与回滚。
+- [`testing-security.md`](testing-security.md)：Pest、质量门禁、测试/迁移数据库引擎一致性、门禁命令单一事实来源、安全审查放行、secret 扫描、租户隔离和隐私。
+- [`delivery-and-operations.md`](delivery-and-operations.md)：Git/PR、审查严重度分级、ADR 规范（引用 `docs/adr/TEMPLATE.md`）、CI、迁移发布、可观测性、备份与回滚。
 - [`../architecture/architecture-components.md`](../architecture/architecture-components.md)：PHP 8.4 运行时、CVE-2024-4577 安全要求和基础 Composer 组件决策。
 - [`../architecture/ecommerce-platform-blueprint.md`](../architecture/ecommerce-platform-blueprint.md)：电商 SaaS 系统总体方案与实施路线。
 
