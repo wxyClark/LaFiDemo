@@ -84,3 +84,56 @@
 | R-08 | 无 SAST / 运行时 SBOM 扫描；components:25 要求"扫描运行时镜像/SBOM"，当前仅覆盖 Composer 漏洞库。 | architecture-components.md:25 vs ci.yml:52-53 |
 | R-09 | 无覆盖率门禁；业务矩阵（testing-security.md:14-27）无量化下限，示例测试全绿即可通过。 | ci.yml:44,61-62、tests/ 目录 |
 | R-10 | phpunit.xml:33-35 PULSE/TELESCOPE/NIGHTWATCH env 占位与项目未使用包不一致；未来接入需确认配置来源。 | phpunit.xml:33-35 |
+
+## 3. 一致性修复建议（规则 ↔ CI ↔ composer 约束）
+
+> 仅建议，不实施。目标：消除 §2 中 R-01、R-02、R-03、R-05、R-06（以及顺带清理 R-07）涉及的"规则文档 ↔ CI 门禁 ↔ composer 约束"不一致，每条给出最小改动点。按实施成本从低到高排序。
+
+### F-1 对应 R-01：消除 PHP 基线文档矛盾（阻断）
+
+- **改动**：修订 `docs/technology-selection.md` 第 15 行与第 31 行，将"PHP 8.3 为兼容下限""PHP 最低基线为 8.3"改为"PHP 最低基线 8.4.3（composer.json `^8.4.3`，CVE-2024-4577 修复下限），生产使用 PHP 8.4 最新安全补丁"，与 AGENTS.md:7、components:9 对齐。
+- **连带**：第 2.1 节 PHP 版本比较表中 8.3 行"兼容下限/回退基线"措辞同步改为"已不作为本项目运行时"；第 8 节待确认项 2"否则先以 8.3 作为可部署基线"删除。
+- **验收**：全仓 grep 不到任何"8.3 基线/下限"类表述（AGENTS.md、components、composer.json、CI 均为 8.4.3 一致）。
+
+### F-2 对应 R-02：CI Pest 步骤切到 MySQL 测试库
+
+- **改动**：`.github/workflows/ci.yml` 的 "Pest (tests)" 步骤（ci.yml:61-62）增加与迁移步骤相同的 env 覆盖（`DB_CONNECTION=mysql`、`DB_HOST/DB_PORT/DB_DATABASE/DB_USERNAME/DB_PASSWORD`，指向 127.0.0.1:3306 的 lafi_ci 服务库），使测试与迁移在同一引擎运行。
+- **连带**：`phpunit.xml` 的 sqlite `:memory:` 保留给本地无 MySQL 场景，但 rules 承诺"涉及 MySQL 特有行为必须 MySQL CI 环境"（testing-security.md:11）——可同时在 `phpunit.xml` 注释或 rules 中说明本地/CI 双引擎约定，避免误解。
+- **验收**：CI 上 Pest 与 migrate:fresh 使用同一 MySQL 服务库；新增一条断言 `DB::connection()->getDriverName() === 'mysql'` 的架构测试锁定 CI 行为（可选，建议放入首个模块 PR）。
+
+### F-3 对应 R-03：composer.json 增加 scripts 段（单一事实来源）
+
+- **改动**：`composer.json` 增加 `scripts` 段，把 CI 内联命令收敛为：
+  ```json
+  "scripts": {
+      "test": "vendor/bin/pest",
+      "analyse": "vendor/bin/phpstan analyse",
+      "style": "vendor/bin/pint --test",
+      "audit": "composer audit",
+      "ci": [
+          "@audit", "@style", "@analyse", "@test"
+      ]
+  }
+  ```
+  并将 ci.yml:49-53 的 "Validate composer files" 改为 `composer validate --strict`（对齐 testing-security.md:42），各门禁 step 改调 `composer test|analyse|style|audit`。
+- **验收**：ci.yml 中不再内联 vendor 命令；`composer validate --strict` 在 CI 实际执行。
+
+### F-4 对应 R-05：Redis/MySQL 服务版本回写文档
+
+- **改动**：`docs/technology-selection.md` §1.2 表 Redis 行与 §4.3 补一句"CI 与集成验证基线：mysql:8.4、redis:8（.github/workflows/ci.yml services）"，使 AGENTS.md:10 的组件决策单一出处成立。
+- **验收**：CI 服务镜像 tag 变更时，PR checklist 要求同步更新该行。
+
+### F-5 对应 R-06：增加 secret 扫描门禁
+
+- **改动**：ci.yml 增加独立 job（不与 quality 同 job，便于并行与独立阻断语义），步骤使用 `gitleaks` 官方 action 扫描仓库文件，并检查 GitHub 默认 secret 扫描设置（Actions 侧无法替代 GitHub 设置的 push protection，需在 PR 描述注明）。composer 侧无对应约束（secret 扫描非依赖问题），仅 CI 层新增。
+- **备选**：若不愿引入第三方 action，可用仓库内置 `vendor/bin/` 下的扫描器或 `codespaces` 风格的 grep 规则做最小实现；不建议为 secret 扫描改 composer 约束。
+- **验收**：`git commit` 一个含假密钥的分支触发 CI 失败；gitleaks 报告出现在 PR 检查项。
+
+### F-6 对应 R-07：清理 components 文档过时状态行（顺手项）
+
+- **改动**：`docs/architecture/architecture-components.md:3` 的"仓库现阶段仍没有完整 Laravel 应用骨架…未生成 composer.lock"改为"骨架与 composer.lock 已于 init 提交落地，后续组件新增仍以本文件为出处"。
+- **验收**：文档导航读者对"已落地"的判定与实际仓库状态一致。
+
+### 实施顺序与依赖
+
+F-1（文档修订，无风险）→ F-3/F-2（CI 与 composer 脚本，需一次流水线变更 PR 评审）→ F-5（新增门禁，需确认第三方 action 许可与维护）→ F-4/F-6（文档回写，可与任意 PR 合并）。
