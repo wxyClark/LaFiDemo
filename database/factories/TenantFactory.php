@@ -11,6 +11,18 @@ use Illuminate\Database\Eloquent\Factories\Factory;
  */
 class TenantFactory extends Factory
 {
+    /**
+     * 模块模型不在 App\Models 下（ADR-0001 a/g 条），自动工厂解析
+     * 无法命中 Database\Factories\TenantFactory，显式指定所属模型。
+     */
+    public function modelName(): string
+    {
+        return Tenant::class;
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
     public function definition(): array
     {
         return [

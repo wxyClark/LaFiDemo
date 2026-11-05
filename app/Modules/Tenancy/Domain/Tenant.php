@@ -4,6 +4,7 @@ namespace App\Modules\Tenancy\Domain;
 
 use Database\Factories\TenantFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Attributes\UseFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -18,15 +19,15 @@ use Illuminate\Database\Eloquent\Model;
  * （本模块无独立 Infrastructure 持久化边界，按 ADR-0001 b 条"简单模块可省略"）。
  */
 #[Fillable(['name', 'status'])]
+#[UseFactory(TenantFactory::class)]
 class Tenant extends Model
 {
-    /** @use HasFactory<TenantFactory> */
     use HasFactory;
 
     /**
      * Get the attributes that should be cast.
      *
-     * @return array<string, string>
+     * @return array<string, class-string<\UnitEnum>|string>
      */
     protected function casts(): array
     {
@@ -37,6 +38,9 @@ class Tenant extends Model
 
     public function isEnabled(): bool
     {
-        return $this->status === TenantStatus::Active->value;
+        /** @var TenantStatus $status */
+        $status = $this->status;
+
+        return $status === TenantStatus::Active;
     }
 }

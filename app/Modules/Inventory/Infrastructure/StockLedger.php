@@ -35,31 +35,11 @@ class StockLedger extends Model
      */
     public const UPDATED_AT = null;
 
-    public int $id;
-
-    public int $tenant_id;
-
-    public int $variant_id;
-
-    public StockMovementType $movement_type;
-
-    public int $quantity_delta;
-
-    public int $quantity_before;
-
-    public int $quantity_after;
-
-    public string $idempotency_key;
-
-    public ?string $reference_type;
-
-    public ?int $reference_id;
-
-    public string $operator_type;
-
-    public ?int $operator_id;
-
-    public string $reason;
+    /**
+     * 表名显式声明（stock_ledger，与 0006 迁移一致；
+     * Eloquent 默认复数推导为 stock_ledgers，必须显式声明）
+     */
+    protected $table = 'stock_ledger';
 
     /**
      * Get the attributes that should be cast.
@@ -69,12 +49,13 @@ class StockLedger extends Model
     protected function casts(): array
     {
         return [
+            'id' => 'int',
+            'tenant_id' => 'int',
+            'variant_id' => 'int',
             'movement_type' => StockMovementType::class,
             'quantity_delta' => 'int',
             'quantity_before' => 'int',
             'quantity_after' => 'int',
-            'tenant_id' => 'int',
-            'variant_id' => 'int',
             'operator_id' => 'int',
             'reference_id' => 'int',
         ];

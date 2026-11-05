@@ -4,6 +4,7 @@ namespace App\Modules\Inventory\Infrastructure;
 
 use Database\Factories\StockFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Attributes\UseFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -17,20 +18,15 @@ use Illuminate\Database\Eloquent\Model;
  * Inventory Application 公开接口）。
  */
 #[Fillable(['tenant_id', 'variant_id', 'on_hand', 'version'])]
+#[UseFactory(StockFactory::class)]
 class Stock extends Model
 {
-    /** @use HasFactory<StockFactory> */
     use HasFactory;
 
-    public int $id;
-
-    public int $tenant_id;
-
-    public int $variant_id;
-
-    public int $on_hand;
-
-    public int $version;
+    /**
+     * 表名显式声明（stock 为单数基线表名，防止 Eloquent 默认复数推导歧义）
+     */
+    protected $table = 'stock';
 
     /**
      * Get the attributes that should be cast.
@@ -40,6 +36,9 @@ class Stock extends Model
     protected function casts(): array
     {
         return [
+            'id' => 'int',
+            'tenant_id' => 'int',
+            'variant_id' => 'int',
             'on_hand' => 'int',
             'version' => 'int',
         ];

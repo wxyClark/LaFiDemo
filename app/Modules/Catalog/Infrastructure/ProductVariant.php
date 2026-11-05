@@ -5,6 +5,7 @@ namespace App\Modules\Catalog\Infrastructure;
 use App\Modules\Catalog\Domain\VariantStatus;
 use Database\Factories\ProductVariantFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Attributes\UseFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -15,9 +16,9 @@ use Illuminate\Database\Eloquent\Model;
  * 公开接口，其他模块禁止直接操作本模型（ADR-0001 e 条）。
  */
 #[Fillable(['tenant_id', 'product_id', 'sku', 'status', 'attributes_json', 'barcode'])]
+#[UseFactory(ProductVariantFactory::class)]
 class ProductVariant extends Model
 {
-    /** @use HasFactory<ProductVariantFactory> */
     use HasFactory;
 
     /**

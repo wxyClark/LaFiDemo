@@ -13,6 +13,14 @@ use Illuminate\Database\Eloquent\Factories\Factory;
 class StockFactory extends Factory
 {
     /**
+     * 模块模型不在 App\Models 下（ADR-0001 a/g 条），显式指定所属模型。
+     */
+    public function modelName(): string
+    {
+        return Stock::class;
+    }
+
+    /**
      * @return array<string, mixed>
      */
     public function definition(): array
