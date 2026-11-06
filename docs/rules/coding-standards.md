@@ -17,7 +17,15 @@
 
 - PHP 生产运行最低版本为 8.4.3，生产推荐 PHP 8.4 最新安全补丁版；详情见 [`../architecture/architecture-components.md`](../architecture/architecture-components.md)。提交 `composer.lock`；应用使用 `composer install`，不使用 `composer update` 作为部署步骤。
 - 加依赖前确认维护状态、许可证、安全公告、PHP/Laravel/Filament 支持范围、传递依赖和替代方案。禁止提交 vendor 目录。
-- Composer 脚本和自动加载遵循 Laravel Composer 结构；生产环境按部署要求使用优化自动加载和排除开发依赖。
+ - Composer 脚本和自动加载遵循 Laravel Composer 结构；生产环境按部署要求使用优化自动加载和排除开发依赖。
+
+### 注释规范
+
+- 注释解释“为什么”（决策、约束、正确性机制、易错点），不重复命名与代码字面能表达的“是什么”；可从一行 diff 推断的注释不写。
+- 公开 Application 用例、Domain 值对象与跨模块入口必须有 docblock：职责、关键前置条件、正确性机制（事务/幂等/授权边界），引用规则或 ADR 编号（如 `ADR-0001 e 条`）。
+- `TODO`/`FIXME` 必须带上下文与去向（任务/ADR 或负责人）；处理相关任务时同步移除或转为 ADR/遗留项，禁止沉淀无主 TODO。
+- 弃用 API/规则统一 `@deprecated` 标注（含替代方案与迁移路径）；删除须过弃用期或兼容性评估（见 delivery-and-operations §2）。
+- 注释语言与项目文档一致（中文为主，技术术语保留英文原文）；vendor/ 与自动生成文件不手写注释。
 
 ## 2. Laravel 13 应用分层
 
