@@ -8,12 +8,24 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\UseFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Carbon;
 
 /**
  * SKU 变体（Catalog 模块；blueprint §5.2）。SKU 是库存单位。
  *
  * 模块归属：Catalog（ADR-0001 a 条）；跨模块写入只能经 Catalog Application
  * 公开接口，其他模块禁止直接操作本模型（ADR-0001 e 条）。
+ */
+/**
+ * @property int $id
+ * @property int $tenant_id
+ * @property int $product_id
+ * @property string $sku
+ * @property VariantStatus $status
+ * @property array|null $attributes_json
+ * @property string|null $barcode
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
  */
 #[Fillable(['tenant_id', 'product_id', 'sku', 'status', 'attributes_json', 'barcode'])]
 #[UseFactory(ProductVariantFactory::class)]
