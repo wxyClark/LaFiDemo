@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\UseFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Carbon;
 
 /**
  * SaaS 商户/租户（Tenancy 模块自有实体；blueprint §5.1）。
@@ -17,6 +18,13 @@ use Illuminate\Database\Eloquent\Model;
  *
  * 模块归属：Tenancy（ADR-0001 a 条）。Eloquent 持久化实体放在模块 Domain 层
  * （本模块无独立 Infrastructure 持久化边界，按 ADR-0001 b 条"简单模块可省略"）。
+ */
+/**
+ * @property int $id
+ * @property string $name
+ * @property TenantStatus $status
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
  */
 #[Fillable(['name', 'status'])]
 #[UseFactory(TenantFactory::class)]

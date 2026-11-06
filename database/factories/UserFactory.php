@@ -3,6 +3,8 @@
 namespace Database\Factories;
 
 use App\Models\User;
+use App\Modules\Tenancy\Domain\Tenant;
+use App\Modules\Tenancy\Domain\UserRole;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
@@ -40,6 +42,28 @@ class UserFactory extends Factory
     {
         return $this->state(fn (array $attributes) => [
             'email_verified_at' => null,
+        ]);
+    }
+
+    /**
+     * 平台运营管理员（双 Panel 基线；role=platform，无租户归属）。
+     */
+    public function platform(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'role' => UserRole::Platform,
+            'tenant_id' => null,
+        ]);
+    }
+
+    /**
+     * 租户商家用户：绑定指定租户（role=tenant + tenant_id）。
+     */
+    public function tenantUser(?Tenant $tenant = null): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'role' => UserRole::Tenant,
+            'tenant_id' => $tenant?->id,
         ]);
     }
 }
