@@ -80,4 +80,5 @@
 
 - PHP 命名与 Laravel 默认习惯一致；数据库 snake_case 复数表名、snake_case 列名；API JSON 字段风格保持一致并以现有契约为准。
 - 用业务术语命名 use case，例如 `PlaceOrder`、`ReserveInventory`、`ProcessPaymentWebhook`。避免含糊的 `CommonService`、`Helper` 聚合业务逻辑。
+- 专项命名：迁移沿用 Laravel 默认形态（时间戳前缀 + `create_<table>_table`，扩列用 `<action>_<table>`），模块归属写在文件头注释（ADR-0001 d 条）；队列 Job 为 `<动作>Job`（如 `ProcessPaymentWebhookJob`）；工厂 `<Model>Factory` 显式绑定模块模型；Seeder 名体现业务场景而非模型（如 `SeedDemoCatalog`）。
 - PR 应说明业务影响、权限/租户边界、事务及幂等、迁移/回滚、测试结果；涉及 API 或表结构时附契约/数据模型更新。
