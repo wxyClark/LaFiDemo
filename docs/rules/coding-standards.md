@@ -17,7 +17,15 @@
 
 - PHP 生产运行最低版本为 8.4.3，生产推荐 PHP 8.4 最新安全补丁版；详情见 [`../architecture/architecture-components.md`](../architecture/architecture-components.md)。提交 `composer.lock`；应用使用 `composer install`，不使用 `composer update` 作为部署步骤。
 - 加依赖前确认维护状态、许可证、安全公告、PHP/Laravel/Filament 支持范围、传递依赖和替代方案。禁止提交 vendor 目录。
-- Composer 脚本和自动加载遵循 Laravel Composer 结构；生产环境按部署要求使用优化自动加载和排除开发依赖。
+ - Composer 脚本和自动加载遵循 Laravel Composer 结构；生产环境按部署要求使用优化自动加载和排除开发依赖。
+
+### 注释规范
+
+- 注释解释“为什么”（决策、约束、正确性机制、易错点），不重复命名与代码字面能表达的“是什么”；可从一行 diff 推断的注释不写。
+- 公开 Application 用例、Domain 值对象与跨模块入口必须有 docblock：职责、关键前置条件、正确性机制（事务/幂等/授权边界），引用规则或 ADR 编号（如 `ADR-0001 e 条`）。
+- `TODO`/`FIXME` 必须带上下文与去向（任务/ADR 或负责人）；处理相关任务时同步移除或转为 ADR/遗留项，禁止沉淀无主 TODO。
+- 弃用 API/规则统一 `@deprecated` 标注（含替代方案与迁移路径）；删除须过弃用期或兼容性评估（见 delivery-and-operations §2）。
+- 注释语言与项目文档一致（中文为主，技术术语保留英文原文）；vendor/ 与自动生成文件不手写注释。
 
 ## 2. Laravel 13 应用分层
 
@@ -72,4 +80,5 @@
 
 - PHP 命名与 Laravel 默认习惯一致；数据库 snake_case 复数表名、snake_case 列名；API JSON 字段风格保持一致并以现有契约为准。
 - 用业务术语命名 use case，例如 `PlaceOrder`、`ReserveInventory`、`ProcessPaymentWebhook`。避免含糊的 `CommonService`、`Helper` 聚合业务逻辑。
+- 专项命名：迁移沿用 Laravel 默认形态（时间戳前缀 + `create_<table>_table`，扩列用 `<action>_<table>`），模块归属写在文件头注释（ADR-0001 d 条）；队列 Job 为 `<动作>Job`（如 `ProcessPaymentWebhookJob`）；工厂 `<Model>Factory` 显式绑定模块模型；Seeder 名体现业务场景而非模型（如 `SeedDemoCatalog`）。
 - PR 应说明业务影响、权限/租户边界、事务及幂等、迁移/回滚、测试结果；涉及 API 或表结构时附契约/数据模型更新。
