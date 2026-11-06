@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Attributes\UseFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Carbon;
 
 /**
  * 商品 SPU（Catalog 模块；blueprint §5.2）。承载展示信息，租户维度唯一 slug。
@@ -18,6 +19,16 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * 公开接口，其他模块禁止直接操作本模型（ADR-0001 e 条）。
  * 本基线不定义跨模块 Eloquent 关系（避免跨模块依赖对方内部模型）；
  * 唯一的例外是 tenant() 只读归属投影（工厂绑定与归属校验用途，只读）。
+ */
+/**
+ * @property int $id
+ * @property int $tenant_id
+ * @property string $slug
+ * @property string $title
+ * @property string|null $description
+ * @property ProductStatus $status
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
  */
 #[Fillable(['tenant_id', 'slug', 'title', 'description', 'status'])]
 #[UseFactory(ProductFactory::class)]
