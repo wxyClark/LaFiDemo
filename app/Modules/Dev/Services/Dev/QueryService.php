@@ -61,17 +61,22 @@ class QueryService
         $exec_time = 0;
         $error = '';
         try {
-            $sql = strtoupper(trim($params['sql']));
+            $sql = trim((string) $params['sql']);
+            // 大写副本仅用于安全校验与表名比对，不能拿去执行：
+            // MySQL 在 lower_case_table_names=0 下表名区分大小写，
+            // 直接执行 PRODUCTS 会得到 1146 Table 'PRODUCTS' doesn't exist
+            $upper = strtoupper($sql);
             // 安全检查：确保只执行SELECT语句
-            $result = $this->checkQueryIsSafeSelect($sql);
+            $result = $this->checkQueryIsSafeSelect($upper);
             if (! $result['status']) {
                 $this->createQuery($params, $exec_time, $error);
 
                 return $result;
             }
 
-            //  检查表名是否运行访问
-            $tables = $this->extractTables($sql);
+            //  检查表名是否允许访问
+            // 表名统一小写后再比对，否则大写副本会让 users/sessions 黑名单形同虚设
+            $tables = array_map('strtolower', $this->extractTables($upper));
             $intersect = array_intersect($this->exceptTables, $tables);
             if ($intersect) {
                 $error_msg = 'The following data table does not support access :'.implode(', ', $intersect);

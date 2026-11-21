@@ -55,6 +55,23 @@ test('json export streams a valid json array', function (): void {
         ->toBeArray();
 });
 
+test('the blocked table list is case insensitive', function (): void {
+    $user = User::factory()->create();
+
+    $service = new QueryService(new QueryRepository);
+
+    $result = $service->executeSql([
+        'sql' => 'SELECT id FROM USERS',
+        'page' => 1,
+        'page_size' => 20,
+        'user_id' => $user->id,
+        'need_insert_query' => false,
+    ]);
+
+    expect($result['status'])->toBeFalse()
+        ->and($result['error_msg'])->toContain('users');
+});
+
 test('a select records an audited query row', function (): void {
     $user = User::factory()->create();
 
