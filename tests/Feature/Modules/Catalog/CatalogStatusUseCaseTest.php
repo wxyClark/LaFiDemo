@@ -2,10 +2,10 @@
 
 use App\Modules\Catalog\Application\UpdateProductStatus;
 use App\Modules\Catalog\Application\UpdateVariantStatus;
-use App\Modules\Catalog\Domain\ProductStatus;
 use App\Modules\Catalog\Domain\VariantStatus;
-use App\Modules\Catalog\Infrastructure\Product;
 use App\Modules\Catalog\Infrastructure\ProductVariant;
+use App\Modules\Domains\Catalog\Enums\ProductStatus;
+use App\Modules\Domains\Catalog\Models\Product;
 use App\Modules\Tenancy\Application\CurrentTenant;
 use App\Modules\Tenancy\Application\TenantContext;
 use App\Modules\Tenancy\Domain\Tenant;
@@ -21,9 +21,9 @@ test('the product status use case updates only the current tenant product', func
 
     app(CurrentTenant::class)->set(TenantContext::forTenant($tenant->id));
 
-    $updated = app(UpdateProductStatus::class)((int) $product->id, ProductStatus::Disabled, '盘点');
+    $updated = app(UpdateProductStatus::class)((int) $product->id, ProductStatus::INACTIVE, '盘点');
 
-    expect($updated->fresh()->status)->toBe(ProductStatus::Disabled);
+    expect($updated->fresh()->status)->toBe(ProductStatus::INACTIVE->value);
 });
 
 test('the product status use case rejects a product outside the tenant', function (): void {
@@ -33,7 +33,7 @@ test('the product status use case rejects a product outside the tenant', functio
 
     app(CurrentTenant::class)->set(TenantContext::forTenant($tenant->id));
 
-    expect(fn () => app(UpdateProductStatus::class)((int) $product->id, ProductStatus::Disabled, '盘点'))
+    expect(fn () => app(UpdateProductStatus::class)((int) $product->id, ProductStatus::INACTIVE, '盘点'))
         ->toThrow(ModelNotFoundException::class);
 });
 

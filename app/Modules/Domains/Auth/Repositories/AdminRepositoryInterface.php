@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Modules\Domains\Auth\Repositories;
 
-use App\Modules\Models\Admin;
+use App\Modules\Domains\Auth\Models\Admin;
 
 interface AdminRepositoryInterface
 {

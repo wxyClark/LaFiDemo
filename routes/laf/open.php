@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-use App\Modules\Http\Controllers\Api\AddressApiController;
+use App\Modules\Domains\Address\Http\Controllers\AddressApiController;
 use Illuminate\Support\Facades\Route;
 
 /*

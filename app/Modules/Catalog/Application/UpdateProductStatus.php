@@ -2,8 +2,8 @@
 
 namespace App\Modules\Catalog\Application;
 
-use App\Modules\Catalog\Domain\ProductStatus;
-use App\Modules\Catalog\Infrastructure\Product;
+use App\Modules\Domains\Catalog\Enums\ProductStatus;
+use App\Modules\Domains\Catalog\Models\Product;
 use App\Modules\Tenancy\Application\CurrentTenant;
 use App\Modules\Tenancy\Application\TenantContext;
 use Illuminate\Support\Facades\Log;
@@ -27,16 +27,16 @@ final class UpdateProductStatus
             ->where('tenant_id', $tenantId)
             ->findOrFail($productId);
 
-        $from = $product->status;
+        $from = (string) $product->status;
 
-        if ($from !== $newStatus) {
-            $product->status = $newStatus;
+        if ($from !== $newStatus->value) {
+            $product->status = $newStatus->value;
             $product->save();
 
             Log::info('catalog.product.status.changed', [
                 'tenant_id' => $tenantId,
                 'product_id' => $product->id,
-                'from' => $from->value,
+                'from' => $from,
                 'to' => $newStatus->value,
                 'reason' => $reason,
             ]);

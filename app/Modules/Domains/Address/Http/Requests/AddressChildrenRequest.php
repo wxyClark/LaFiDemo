@@ -1,0 +1,22 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Modules\Domains\Address\Http\Requests;
+
+use Illuminate\Foundation\Http\FormRequest;
+
+class AddressChildrenRequest extends FormRequest
+{
+    public function authorize(): bool
+    {
+        return true;
+    }
+
+    public function rules(): array
+    {
+        return [
+            'parent_id' => ['nullable', 'integer', 'exists:addresses,id'],
+        ];
+    }
+}

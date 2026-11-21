@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Filament\Admin\Pages;
 
-use App\Modules\Models\Address;
+use App\Modules\Domains\Address\Models\Address;
 use BackedEnum;
 use Filament\Pages\Page;
 use Filament\Panel;

@@ -23,6 +23,8 @@
     <php>
         <env name="APP_ENV" value="testing"/>
         <env name="APP_KEY" value="base64:NZEYslvAw/xMPiqZ7VgqWA0A9WMIH8yXvF8j5DXd4so="/>
+        <!-- 遗留业务接口的 JWT 令牌密钥；未设置时 tymon/jwt-auth 直接抛异常 -->
+        <env name="JWT_SECRET" value="test-jwt-secret-not-for-production"/>
         <env name="APP_MAINTENANCE_DRIVER" value="file"/>
         <env name="BCRYPT_ROUNDS" value="4"/>
         <env name="BROADCAST_CONNECTION" value="null"/>

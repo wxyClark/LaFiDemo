@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-use App\Modules\Http\Controllers\Api\User\CustomerController;
+use App\Modules\Domains\User\Http\Controllers\CustomerController;
 use Illuminate\Support\Facades\Route;
 
 /*

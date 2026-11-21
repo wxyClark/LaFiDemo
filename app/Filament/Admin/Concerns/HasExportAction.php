@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace App\Filament\Admin\Concerns;
 
+use App\Modules\Domains\Auth\Models\Admin;
 use App\Modules\Exports\QueryExport;
 use App\Modules\Jobs\ExportDataJob;
-use App\Modules\Models\Admin;
 use Filament\Actions\Action;
 use Filament\Notifications\Notification;
 use Illuminate\Database\Eloquent\Builder;

@@ -18,23 +18,24 @@ return new class extends Migration
     {
         Schema::create('products', function (Blueprint $table) {
             $table->id();
-            $table->unsignedBigInteger('tenant_id')->index();
-            $table->string('slug', 100);
-            $table->string('title', 200);
+            $table->unsignedBigInteger('tenant_id')->nullable()->index();
+            $table->string('slug', 100)->nullable();
+            $table->string('title', 200)->nullable();
             $table->text('description')->nullable();
             // Generic product columns used by the Admin panel's ProductResource
             // (App\Modules\Domains\Catalog\Models\Product). Kept nullable so the
             // SPU-style rows created by the tenant catalog remain valid.
             $table->string('name')->nullable();
             $table->string('type', 20)->nullable();
+            $table->unsignedBigInteger('category_id')->nullable()->index();
             $table->string('image')->nullable();
             $table->softDeletes();
-            // 受控状态：'active' / 'disabled'（应用层枚举校验）
+            // 受控状态：'active' / 'inactive'（应用层枚举校验）
             $table->string('status', 20)->default('active');
             $table->timestamps();
 
             $table->unique(['tenant_id', 'id']);
-            $table->unique(['tenant_id', 'slug']);
+            $table->index(['tenant_id', 'slug']);
             $table->foreign('tenant_id')->references('id')->on('tenants')->cascadeOnDelete();
         });
     }

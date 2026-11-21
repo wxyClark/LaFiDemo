@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Modules\Exports;
 
-use App\Modules\Models\Enums\AddressLevel;
+use App\Modules\Domains\Address\Enums\AddressLevel;
 use Illuminate\Database\Eloquent\Builder;
 
 class QueryExport

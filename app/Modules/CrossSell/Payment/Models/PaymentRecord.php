@@ -7,7 +7,7 @@ namespace App\Modules\CrossSell\Payment\Models;
 use App\Modules\CrossSell\Enums\PaymentType;
 use App\Modules\CrossSell\Order\Models\Order;
 use App\Modules\Domains\Payment\Database\Factories\PaymentRecordFactory;
-use App\Modules\Models\Customer;
+use App\Modules\Domains\User\Models\Customer;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;

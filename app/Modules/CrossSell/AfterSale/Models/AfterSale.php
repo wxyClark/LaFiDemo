@@ -8,7 +8,7 @@ use App\Modules\CrossSell\Enums\AfterSaleStatus;
 use App\Modules\CrossSell\Enums\AfterSaleType;
 use App\Modules\CrossSell\Order\Models\Order;
 use App\Modules\Domains\AfterSale\Database\Factories\AfterSaleFactory;
-use App\Modules\Models\Customer;
+use App\Modules\Domains\User\Models\Customer;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;

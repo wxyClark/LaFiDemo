@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace App\Filament\Admin\Resources;
 
 use App\Filament\Admin\Resources\CustomerResource\Pages;
+use App\Modules\Domains\User\Models\Customer;
 use App\Modules\Infrastructure\Filament\Concerns\HasResourcePermission;
-use App\Modules\Models\Customer;
 use BackedEnum;
 use Filament\Actions;
 use Filament\Forms;

@@ -7,8 +7,9 @@ use App\Modules\Dev\Repositories\Dev\QueryRepository;
 use App\Modules\Dev\Traits\ExportTrait;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Log;
-use Kra8\Snowflake\Snowflake;
+use Illuminate\Support\Str;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 /**
@@ -60,17 +61,22 @@ class QueryService
         $exec_time = 0;
         $error = '';
         try {
-            $sql = strtoupper(trim($params['sql']));
+            $sql = trim((string) $params['sql']);
+            // 大写副本仅用于安全校验与表名比对，不能拿去执行：
+            // MySQL 在 lower_case_table_names=0 下表名区分大小写，
+            // 直接执行 PRODUCTS 会得到 1146 Table 'PRODUCTS' doesn't exist
+            $upper = strtoupper($sql);
             // 安全检查：确保只执行SELECT语句
-            $result = $this->checkQueryIsSafeSelect($sql);
+            $result = $this->checkQueryIsSafeSelect($upper);
             if (! $result['status']) {
                 $this->createQuery($params, $exec_time, $error);
 
                 return $result;
             }
 
-            //  检查表名是否运行访问
-            $tables = $this->extractTables($sql);
+            //  检查表名是否允许访问
+            // 表名统一小写后再比对，否则大写副本会让 users/sessions 黑名单形同虚设
+            $tables = array_map('strtolower', $this->extractTables($upper));
             $intersect = array_intersect($this->exceptTables, $tables);
             if ($intersect) {
                 $error_msg = 'The following data table does not support access :'.implode(', ', $intersect);
@@ -137,7 +143,7 @@ class QueryService
     /**
      * 下载Excel文件
      *
-     * @return void
+     * @return BinaryFileResponse
      *
      * @throws \Exception
      *
@@ -169,10 +175,10 @@ class QueryService
             foreach ($first as $key => $value) {
                 $header[$key] = 'string';
             }
-            $writer = new \XLSXWriter;
-            $writer->writeSheetHeader('Sheet1', $header);
+            $fileName = $this->exportFileName('.xlsx');
 
-            $fileName = app(Snowflake::class)->id().'_'.date('Ymd-His').'.xlsx';
+            $writer = $this->xlsxWriter($fileName);
+            $this->xlsxHeader($writer, array_keys($header));
 
             $export_page_size = ExportNumLimitEnums::COMMON_PAGE_NUM_LIMIT;
             $page = 1;
@@ -185,12 +191,14 @@ class QueryService
                 }
 
                 foreach ($list as $row) {
-                    $writer->writeSheetRow('Sheet1', get_object_vars($row));
+                    $this->xlsxRow($writer, get_object_vars($row));
                 }
                 $page++;
             }
 
-            $this->xlsxToDown($writer, $fileName);
+            $writer->close();
+
+            return $this->xlsxToDown($fileName);
         } catch (\Exception $e) {
             Log::error($e->getMessage(), [
                 'code' => $e->getCode(),
@@ -227,8 +235,10 @@ class QueryService
             throw new \Exception('The number of rows is too large, please change conditions!');
         }
 
-        $fileName = app(Snowflake::class)->id().'_'.date('Ymd-His').'.json';
+        $fileName = $this->exportFileName('.json');
         $filePath = storage_path("app/exports/{$fileName}");
+        // 导出目录不随应用初始化，先确保存在
+        File::ensureDirectoryExists(dirname($filePath));
         // 创建文件并打开流
         $handle = fopen($filePath, 'w');
         fwrite($handle, "[\n");
@@ -399,7 +409,7 @@ class QueryService
         if (empty($params['need_insert_query'])) {
             return false;
         }
-        $query_code = app(Snowflake::class)->id();
+        $query_code = Str::uuid()->toString();
 
         return $this->queryRepository->create([
             'query_code' => $query_code,

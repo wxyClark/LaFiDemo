@@ -1,6 +1,6 @@
 <?php
 
-use App\Modules\Services\AddressImport\CanonicalCode;
+use App\Modules\Domains\Address\Support\CanonicalCode;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\DB;
