@@ -67,7 +67,8 @@ test('a select records an audited query row', function (): void {
         'need_insert_query' => true,
     ]);
 
-    expect($result['status'])->toBeTrue()
+    expect($result['status'], 'executeSql error_msg: '.($result['error_msg'] ?? 'n/a'))
+        ->toBeTrue()
         ->and(Query::count())->toBe(1)
         ->and(Query::first()->query_code)->not->toBeEmpty();
 });
