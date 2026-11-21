@@ -9,15 +9,10 @@ parameters:
         - database
         - tests
     ignoreErrors:
-        # JWTAuth facade forwards calls via __callStatic (larastan cannot resolve).
-        - identifier: staticMethod.notFound
-          message: '#Tymon\\JWTAuth\\Facades\\JWTAuth#'
         # Dynamic Eloquent methods resolved at runtime on the bound model
-        # (SoftDeletes::withTrashed, local scope active()).
+        # (SoftDeletes::withTrashed).
         - identifier: method.notFound
           message: '#Illuminate\\Database\\Eloquent\\Model::withTrashed\(\)#'
-        - identifier: method.notFound
-          message: '#Illuminate\\Database\\Eloquent\\Model::active\(\)#'
         # Foreign key comment() is a Laravel version-specific schema API.
         - identifier: method.notFound
           message: '#Illuminate\\Database\\Schema\\ForeignKeyDefinition::comment\(\)#'
