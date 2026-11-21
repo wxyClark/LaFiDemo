@@ -8,3 +8,23 @@ parameters:
         - app
         - database
         - tests
+    ignoreErrors:
+        # Dev module uses optional third-party classes not installed as dependencies.
+        - identifier: class.notFound
+          path: app/Modules/Dev/**/*.php
+        # JWTAuth facade forwards calls via __callStatic (larastan cannot resolve).
+        - identifier: staticMethod.notFound
+          message: '#Tymon\\JWTAuth\\Facades\\JWTAuth#'
+        # Dynamic Eloquent methods resolved at runtime on the bound model
+        # (SoftDeletes::withTrashed, local scope active()).
+        - identifier: method.notFound
+          message: '#Illuminate\\Database\\Eloquent\\Model::withTrashed\(\)#'
+        - identifier: method.notFound
+          message: '#Illuminate\\Database\\Eloquent\\Model::active\(\)#'
+        # Foreign key comment() is a Laravel version-specific schema API.
+        - identifier: method.notFound
+          message: '#Illuminate\\Database\\Schema\\ForeignKeyDefinition::comment\(\)#'
+        # Eloquent models expose attributes dynamically via __get (larastan
+        # cannot resolve model columns declared only in $fillable/casts).
+        - identifier: property.notFound
+          message: '#Illuminate\\Database\\Eloquent\\Model::\$#'

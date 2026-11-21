@@ -35,4 +35,15 @@ return [
         ],
     ],
 
+    'address' => [
+        'amap_key' => env('AMAP_KEY', ''),
+        'amap_base_url' => env('ADDRESS_API_BASE_URL', 'https://restapi.amap.com'),
+        'import_base_url' => env('ADDRESS_IMPORT_BASE_URL'),
+    ],
+
+    'filament_admin' => [
+        'prefill_email' => env('FILAMENT_ADMIN_PREFILL_EMAIL'),
+        'prefill_password' => env('FILAMENT_ADMIN_PREFILL_PASSWORD'),
+    ],
+
 ];
