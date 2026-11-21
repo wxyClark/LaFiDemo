@@ -16,15 +16,15 @@ use App\Modules\Dev\Repositories\Contracts\BaseRepositoryInterface;
 class UserRepository extends BaseRepository implements BaseRepositoryInterface
 {
     protected $inTermFields = [
-        'id', 'name', 'status', 'email'
+        'id', 'name', 'status', 'email',
     ];
+
     protected $timeRangeFields = [
-        'created_at', 'updated_at'
+        'created_at', 'updated_at',
     ];
 
     protected function model(): string
     {
-        return User::class;
+        return user::class;
     }
-
 }

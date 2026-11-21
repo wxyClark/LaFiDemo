@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace App\Modules\CrossSell\AfterSale\Models;
 
+use App\Models\Customer;
 use App\Modules\CrossSell\Database\Factories\AfterSaleFactory;
 use App\Modules\CrossSell\Enums\AfterSaleStatus;
 use App\Modules\CrossSell\Enums\AfterSaleType;
-use App\Models\Customer;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;

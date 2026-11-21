@@ -5,6 +5,7 @@ namespace App\Modules\Dev\Enums\User;
 enum RoleStatusEnums
 {
     const ROLE_STATUS_ENABLE = 1;
+
     const ROLE_STATUS_DISABLE = 2;
 
     const ROLE_STATUS_MAP = [
@@ -14,9 +15,9 @@ enum RoleStatusEnums
 
     /**
      * 获取状态描述
-     * @param $value
-     * @return string
+     *
      * @author wxyClark
+     *
      * @create 2025/11/29 15:34
      *
      * @version 1.0

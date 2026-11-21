@@ -29,7 +29,7 @@ final class HmtRegions
      */
     public static function items(): array
     {
-        return static::tree();
+        return self::tree();
     }
 
     /**
@@ -39,7 +39,7 @@ final class HmtRegions
      */
     public static function rows(string $unitKey): array
     {
-        $unit = static::tree()[$unitKey] ?? null;
+        $unit = self::tree()[$unitKey] ?? null;
 
         if ($unit === null) {
             return [];
@@ -47,7 +47,7 @@ final class HmtRegions
 
         $rows = [];
 
-        foreach (static::flatten($unit, null, []) as $row) {
+        foreach (self::flatten($unit, null, []) as $row) {
             $rows[] = $row;
         }
 
@@ -232,7 +232,7 @@ final class HmtRegions
         ]];
 
         foreach ($node['children'] ?? [] as $child) {
-            $rows = array_merge($rows, static::flatten($child, $node['code'], $currentPath));
+            $rows = array_merge($rows, self::flatten($child, $node['code'], $currentPath));
         }
 
         return $rows;

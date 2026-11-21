@@ -34,12 +34,12 @@ class InitAddressesCommand extends Command
         try {
             $revision = $provider->revision();
         } catch (\Throwable $e) {
-            $this->error('数据源初始化失败: ' . $e->getMessage());
+            $this->error('数据源初始化失败: '.$e->getMessage());
 
             return Command::FAILURE;
         }
 
-        $this->info('数据源: ' . $provider->name() . " (修订号 {$revision})");
+        $this->info('数据源: '.$provider->name()." (修订号 {$revision})");
 
         if ($this->option('flush')) {
             $this->warn('--flush: 将清空 addresses 表并重置断点状态');

@@ -24,6 +24,4 @@ interface BaseRepositoryInterface
 
     // 批量删除
     public function batchDelete(array $ids);
-
 }
-

@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace App\Modules\CrossSell\Payment\Models;
 
+use App\Models\Customer;
 use App\Modules\CrossSell\Database\Factories\PaymentRecordFactory;
 use App\Modules\CrossSell\Enums\PaymentType;
-use App\Models\Customer;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;

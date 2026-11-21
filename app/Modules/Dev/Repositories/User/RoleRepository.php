@@ -2,7 +2,6 @@
 
 namespace App\Modules\Dev\Repositories\User;
 
-
 use App\Modules\Dev\Models\User\Role;
 use App\Modules\Dev\Repositories\BaseRepository;
 use App\Modules\Dev\Repositories\Contracts\BaseRepositoryInterface;
@@ -17,15 +16,15 @@ use App\Modules\Dev\Repositories\Contracts\BaseRepositoryInterface;
 class RoleRepository extends BaseRepository implements BaseRepositoryInterface
 {
     protected $inTermFields = [
-        'id', 'name', 'status'
+        'id', 'name', 'status',
     ];
+
     protected $timeRangeFields = [
-        'created_at', 'updated_at'
+        'created_at', 'updated_at',
     ];
 
     protected function model(): string
     {
         return Role::class;
     }
-
 }

@@ -42,7 +42,7 @@ class AmapProvider implements AddressProvider
      */
     public function revision(): string
     {
-        return 'amap@' . now()->format('Ymd');
+        return 'amap@'.now()->format('Ymd');
     }
 
     public function units(): array
@@ -87,7 +87,7 @@ class AmapProvider implements AddressProvider
     protected function district(string $keyword, int $subdistrict): array
     {
         $response = Http::timeout(60)
-            ->get($this->baseUrl . '/v3/config/district', [
+            ->get($this->baseUrl.'/v3/config/district', [
                 'keywords' => $keyword,
                 'subdistrict' => $subdistrict,
                 'extensions' => 'base',
@@ -101,14 +101,14 @@ class AmapProvider implements AddressProvider
         $json = $response->json();
 
         if (($json['status'] ?? '0') !== '1') {
-            throw new RuntimeException('Amap 返回错误: ' . ($json['info'] ?? 'unknown') . " (infocode {$json['infocode']})");
+            throw new RuntimeException('Amap 返回错误: '.($json['info'] ?? 'unknown')." (infocode {$json['infocode']})");
         }
 
         return $json['districts'] ?? [];
     }
 
     /**
-     * @param array{rows: array} $holder
+     * @param  array{rows: array}  $holder
      */
     protected function walk(array $node, ?string $parentAdcode, int $levelNum, array &$rows, array $path = []): void
     {
@@ -118,7 +118,7 @@ class AmapProvider implements AddressProvider
         if ($adcode === '' && $parentAdcode !== null) {
             static $seq = [];
             $seq[$parentAdcode] = ($seq[$parentAdcode] ?? 0) + 1;
-            $adcode = $parentAdcode . sprintf('%03d', $seq[$parentAdcode]);
+            $adcode = $parentAdcode.sprintf('%03d', $seq[$parentAdcode]);
         }
 
         $level = match ($levelNum) {

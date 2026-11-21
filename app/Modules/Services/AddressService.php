@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Modules\Services;
 
 use App\Modules\Models\Address;
+use App\Modules\Services\AddressImport\CanonicalCode;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
@@ -134,7 +135,7 @@ class AddressService
                     'parent_id' => $parentId,
                     'name' => $item['name'],
                     'code' => $item['code'],
-                    'area_code' => \App\Modules\Services\AddressImport\CanonicalCode::normalize($item['code'], $item['level_num']),
+                    'area_code' => CanonicalCode::normalize($item['code'], $item['level_num']),
                     'level' => $item['level'],
                     'level_num' => $item['level_num'],
                     'pinyin' => $item['pinyin'] ?? null,

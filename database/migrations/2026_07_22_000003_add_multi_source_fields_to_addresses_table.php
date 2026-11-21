@@ -29,12 +29,12 @@ return new class extends Migration
             $cases = '';
             $ids = [];
             foreach ($chunk as $row) {
-                $cases .= "WHEN {$row->id} THEN '" . CanonicalCode::normalize($row->code, $row->level_num) . "' ";
+                $cases .= "WHEN {$row->id} THEN '".CanonicalCode::normalize($row->code, $row->level_num)."' ";
                 $ids[] = $row->id;
             }
 
             DB::statement(
-                "UPDATE addresses SET area_code = CASE id {$cases}END WHERE id IN (" . implode(',', $ids) . ")"
+                "UPDATE addresses SET area_code = CASE id {$cases}END WHERE id IN (".implode(',', $ids).')'
             );
         }
 
@@ -67,11 +67,11 @@ return new class extends Migration
      */
     private function ensureAreaCodeUnique(): void
     {
-        $table = Schema::getConnection()->getTablePrefix() . 'addresses';
+        $table = Schema::getConnection()->getTablePrefix().'addresses';
         $count = DB::table('addresses')->selectRaw('area_code, count(*) as c')->groupBy('area_code')->whereNotNull('area_code')->havingRaw('count(*) > 1')->count();
 
         if ($count > 0) {
-            throw new \RuntimeException("addresses 表存在重复 area_code ({$count} 组)，无法建立唯一约束，请检查数据");
+            throw new RuntimeException("addresses 表存在重复 area_code ({$count} 组)，无法建立唯一约束，请检查数据");
         }
 
         DB::statement("CREATE UNIQUE INDEX IF NOT EXISTS idx_{$table}_area_code_unique ON {$table} (area_code)");

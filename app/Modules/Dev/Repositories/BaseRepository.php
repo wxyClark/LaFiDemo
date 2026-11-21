@@ -19,8 +19,10 @@ abstract class BaseRepository implements BaseRepositoryInterface
 
     //  精准匹配 where
     protected $inTermFields = [];
+
     //  支持时间范围查询的字段
     protected $timeRangeFields = [];
+
     //  支持时间范围查询的字段
     protected $numberRangeFields = [];
 
@@ -33,7 +35,7 @@ abstract class BaseRepository implements BaseRepositoryInterface
     {
         $model = app($this->model());
 
-        if (!$model instanceof Model) {
+        if (! $model instanceof Model) {
             throw new \RuntimeException("Class {$this->model()} 必须基础自 Model 基类");
         }
 
@@ -44,11 +46,11 @@ abstract class BaseRepository implements BaseRepositoryInterface
 
     /**
      * 获取多条记录
-     * @param $params
-     * @param $columns
-     * @param $orderBy
+     *
      * @return array
+     *
      * @author wxyClark
+     *
      * @create 2025/11/29 14:44
      *
      * @version 1.0
@@ -57,14 +59,15 @@ abstract class BaseRepository implements BaseRepositoryInterface
     {
         $query = $this->conditions($params);
 
-        if (!empty($orderBy)) {
+        if (! empty($orderBy)) {
             foreach ($orderBy as $column => $type) {
                 $query->orderBy($column, $type);
             }
         }
 
-        if (!empty($params['page']) && !empty($params['page_size'])) {
+        if (! empty($params['page']) && ! empty($params['page_size'])) {
             $offset = ($params['page'] - 1) * $params['page_size'];
+
             return $query->offset($offset, $params['page']);
         }
         $list = $this->conditions($params)->select($columns)->get();
@@ -74,10 +77,11 @@ abstract class BaseRepository implements BaseRepositoryInterface
 
     /**
      * 获取单条记录
-     * @param $params
-     * @param $columns
+     *
      * @return array
+     *
      * @author wxyClark
+     *
      * @create 2025/11/29 15:04
      *
      * @version 1.0
@@ -91,9 +95,11 @@ abstract class BaseRepository implements BaseRepositoryInterface
 
     /**
      * 统计总数
-     * @param $params
+     *
      * @return mixed
+     *
      * @author wxyClark
+     *
      * @create 2025/11/29 15:02
      *
      * @version 1.0
@@ -105,9 +111,11 @@ abstract class BaseRepository implements BaseRepositoryInterface
 
     /**
      * 创建
-     * @param  array  $data
+     *
      * @return mixed
+     *
      * @author wxyClark
+     *
      * @create 2025/11/29 15:02
      *
      * @version 1.0
@@ -121,10 +129,11 @@ abstract class BaseRepository implements BaseRepositoryInterface
 
     /**
      * 更新
-     * @param  array  $conditions
-     * @param  array  $data
+     *
      * @return mixed
+     *
      * @author wxyClark
+     *
      * @create 2025/11/29 15:12
      *
      * @version 1.0
@@ -136,9 +145,11 @@ abstract class BaseRepository implements BaseRepositoryInterface
 
     /**
      * 批量
-     * @param  array  $ids
+     *
      * @return false
+     *
      * @author wxyClark
+     *
      * @create 2025/11/29 15:10
      *
      * @version 1.0
@@ -148,14 +159,17 @@ abstract class BaseRepository implements BaseRepositoryInterface
         if (empty($ids)) {
             return false;
         }
+
         return $this->model->whereIn('id', $ids)->delete();
     }
 
     /**
      * 删除单条记录
-     * @param  int  $id
+     *
      * @return false
+     *
      * @author wxyClark
+     *
      * @create 2025/11/29 15:11
      *
      * @version 1.0
@@ -165,16 +179,17 @@ abstract class BaseRepository implements BaseRepositoryInterface
         if (empty($id)) {
             return false;
         }
+
         return $this->model->where('id', $id)->delete();
     }
 
-
-
     /**
      * 通用查询
-     * @param $params
+     *
      * @return mixed
+     *
      * @author wxyClark
+     *
      * @create 2025/11/29 11:44
      *
      * @version 1.0
@@ -185,27 +200,27 @@ abstract class BaseRepository implements BaseRepositoryInterface
 
         //  精准匹配，兼容 单值、数组；
         foreach ($this->inTermFields as $field) {
-            if (!empty($params[$field])) {
+            if (! empty($params[$field])) {
                 $query->whereIn($field, (array) $params[$field]);
             }
         }
 
         //  数值范围查询
-        if (!empty($params['number_type']) && in_array($params['number_type'], $this->numberRangeFields)) {
+        if (! empty($params['number_type']) && in_array($params['number_type'], $this->numberRangeFields)) {
             if (isset($params['number_min'])) {
                 $query->where($params['number_type'], '>=', $params['number_min']);
             }
-            if (!empty($params['number_max'])) {
+            if (! empty($params['number_max'])) {
                 $query->where($params['number_type'], '<', $params['number_max']);
             }
         }
 
         //  时间范围查询
-        if (!empty($params['time_type']) && in_array($params['time_type'], $this->timeRangeFields)) {
-            if (!empty($params['time_start'])) {
+        if (! empty($params['time_type']) && in_array($params['time_type'], $this->timeRangeFields)) {
+            if (! empty($params['time_start'])) {
                 $query->where($params['time_type'], '>=', $params['time_start']);
             }
-            if (!empty($params['time_end'])) {
+            if (! empty($params['time_end'])) {
                 $query->where($params['time_type'], '<=', $params['time_end']);
             }
         }

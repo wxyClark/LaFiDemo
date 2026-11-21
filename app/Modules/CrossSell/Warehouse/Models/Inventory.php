@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace App\Modules\CrossSell\Warehouse\Models;
 
+use App\Domains\Notification\Events\LowStockDetected;
 use App\Modules\CrossSell\Product\Models\SKU;
 use App\Modules\CrossSell\Tenant\Models\Tenant;
-use App\Domains\Notification\Events\LowStockDetected;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;

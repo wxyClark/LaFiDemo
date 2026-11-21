@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace App\Modules\Http\Controllers;
 
+use App\Http\Controllers\Controller;
 use App\Modules\Models\Address;
 use App\Modules\Models\Enums\AddressLevel;
-use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\View\View;
 

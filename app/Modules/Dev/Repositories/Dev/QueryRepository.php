@@ -2,7 +2,6 @@
 
 namespace App\Modules\Dev\Repositories\Dev;
 
-
 use App\Modules\Dev\Models\Query;
 use App\Modules\Dev\Repositories\BaseRepository;
 use App\Modules\Dev\Repositories\Contracts\BaseRepositoryInterface;
@@ -16,13 +15,14 @@ use App\Modules\Dev\Repositories\Contracts\BaseRepositoryInterface;
  */
 class QueryRepository extends BaseRepository implements BaseRepositoryInterface
 {
-
     protected $inTermFields = [
-        'id', 'query_code', 'user_id '
+        'id', 'query_code', 'user_id ',
     ];
+
     protected $timeRangeFields = [
-        'created_at', 'updated_at'
+        'created_at', 'updated_at',
     ];
+
     protected $numberRangeFields = [
         'exec_time',
     ];

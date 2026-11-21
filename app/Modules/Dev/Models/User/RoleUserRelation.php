@@ -3,6 +3,7 @@
 namespace App\Modules\Dev\Models\User;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class RoleUserRelation extends Model
 {
@@ -14,8 +15,11 @@ class RoleUserRelation extends Model
 
     /**
      * 权限对应的角色
-     * @return \Illuminate\Database\Eloquent\Relations\HasMany
+     *
+     * @return HasMany
+     *
      * @author wxyClark
+     *
      * @create 2025/11/29 11:23
      *
      * @version 1.0
@@ -27,8 +31,11 @@ class RoleUserRelation extends Model
 
     /**
      * 权限对应的用户
-     * @return \Illuminate\Database\Eloquent\Relations\HasMany
+     *
+     * @return HasMany
+     *
      * @author wxyClark
+     *
      * @create 2025/11/29 11:23
      *
      * @version 1.0

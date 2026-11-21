@@ -26,7 +26,7 @@ class QueryService
 
     //  禁止访问的表的
     private $exceptTables = [
-        'users', 'sessions', 'migrations', 'personal_access_tokens', 'password_reset_tokens'
+        'users', 'sessions', 'migrations', 'personal_access_tokens', 'password_reset_tokens',
     ];
 
     // 禁止的关键字和操作
@@ -34,7 +34,7 @@ class QueryService
         'INSERT', 'UPDATE', 'DELETE', 'DROP', 'ALTER', 'CREATE', 'TRUNCATE',
         'EXEC', 'EXECUTE', 'GRANT', 'REVOKE', 'MERGE', 'CALL', 'DESCRIBE',
         'SHOW', 'USE', 'SET', 'BEGIN', 'COMMIT', 'ROLLBACK', 'SAVEPOINT',
-        'LOCK', 'UNLOCK', 'LOAD', 'COPY', 'REPLACE', 'DELIMITER'
+        'LOCK', 'UNLOCK', 'LOAD', 'COPY', 'REPLACE', 'DELIMITER',
     ];
 
     public function __construct(
@@ -45,9 +45,11 @@ class QueryService
 
     /**
      * 执行SQL查询，强制分页
-     * @param $params
+     *
      * @return array
+     *
      * @author wxyClark
+     *
      * @create 2025/11/30 11:42
      *
      * @version 1.0
@@ -60,8 +62,9 @@ class QueryService
             $sql = strtoupper(trim($params['sql']));
             // 安全检查：确保只执行SELECT语句
             $result = $this->checkQueryIsSafeSelect($sql);
-            if (!$result['status']) {
+            if (! $result['status']) {
                 $this->createQuery($params, $exec_time, $error);
+
                 return $result;
             }
 
@@ -71,6 +74,7 @@ class QueryService
             if ($intersect) {
                 $error_msg = 'The following data table does not support access :'.implode(', ', $intersect);
                 $this->createQuery($params, $exec_time, $error_msg);
+
                 return [
                     'status' => false,
                     'error_msg' => $error_msg,
@@ -98,14 +102,14 @@ class QueryService
             ];
         } catch (QueryException $e) {
             // 捕获数据库查询异常
-            $error = "SQL execution error: " . $e->getMessage();
+            $error = 'SQL execution error: '.$e->getMessage();
             Log::warning($error, [
                 'user_id' => $params['user_id'],
                 'sql' => $params['sql'],
             ]);
         } catch (\Exception $e) {
             // 捕获其他异常
-            $error = "System Error: " . $e->getMessage();
+            $error = 'System Error: '.$e->getMessage();
             Log::error($error, [
                 'user_id' => $params['user_id'],
                 'sql' => $params['sql'],
@@ -131,13 +135,16 @@ class QueryService
 
     /**
      * 下载Excel文件
-     * @param $params
-     * @return null
-     * @throws \Exception
-     * @version 1.0
-     * @author wxyClark
-     * @create 2025/11/30 18:25
      *
+     * @return null
+     *
+     * @throws \Exception
+     *
+     * @version 1.0
+     *
+     * @author wxyClark
+     *
+     * @create 2025/11/30 18:25
      */
     public function exportExcel($params)
     {
@@ -161,7 +168,7 @@ class QueryService
             foreach ($first as $key => $value) {
                 $header[$key] = 'string';
             }
-            $writer = new \XLSXWriter();
+            $writer = new \XLSXWriter;
             $writer->writeSheetHeader('Sheet1', $header);
 
             $fileName = app(Snowflake::class)->id().'_'.date('Ymd-His').'.xlsx';
@@ -182,7 +189,7 @@ class QueryService
                 $page++;
             }
 
-            return $this->xlsxToDown($writer,$fileName);
+            return $this->xlsxToDown($writer, $fileName);
         } catch (\Exception $e) {
             Log::error($e->getMessage(), [
                 'code' => $e->getCode(),
@@ -195,13 +202,16 @@ class QueryService
 
     /**
      * 下载JSON文件
-     * @param $params
-     * @return null
-     * @throws \Exception
-     * @version 1.0
-     * @author wxyClark
-     * @create 2025/11/30 18:25
      *
+     * @return null
+     *
+     * @throws \Exception
+     *
+     * @version 1.0
+     *
+     * @author wxyClark
+     *
+     * @create 2025/11/30 18:25
      */
     public function exportJson($params)
     {
@@ -233,7 +243,7 @@ class QueryService
                 break;
             }
 
-            if (!$firstItem) {
+            if (! $firstItem) {
                 fwrite($handle, ",\n"); // 添加数组元素分隔符
             }
             $firstItem = false;
@@ -251,9 +261,11 @@ class QueryService
 
     /**
      * 校验SQL是否安全
-     * @param $sql
+     *
      * @return array
+     *
      * @author wxyClark
+     *
      * @create 2025/11/30 11:00
      *
      * @version 1.0
@@ -277,7 +289,7 @@ class QueryService
         // 检查是否包含危险关键字
         foreach ($this->dangerousKeywords as $keyword) {
             // 使用单词边界匹配，避免误判
-            if (preg_match('/\b' . $keyword . '\b/i', $sql)) {
+            if (preg_match('/\b'.$keyword.'\b/i', $sql)) {
                 return [
                     'status' => false,
                     'error_msg' => 'Sql statement has not supported keyword: '.$keyword.'! Only supports "SELECT" statements.',
@@ -301,9 +313,11 @@ class QueryService
 
     /**
      * 移除SQL注释
-     * @param $sql
+     *
      * @return array|string|string[]|null
+     *
      * @author wxyClark
+     *
      * @create 2025/11/29 22:19
      *
      * @version 1.0
@@ -324,9 +338,11 @@ class QueryService
 
     /**
      * 解析表名
-     * @param $sql
+     *
      * @return array
+     *
      * @author wxyClark
+     *
      * @create 2025/11/30 09:22
      *
      * @version 1.0
@@ -339,16 +355,16 @@ class QueryService
         // 匹配 FROM 和 JOIN 后面的表名（包括别名）
         $patterns = [
             '/\bFROM\s+([^\s,()]+)(?:\s+AS\s+[^\s,()]+)?/i',
-            '/\bJOIN\s+([^\s,()]+)(?:\s+AS\s+[^\s,()]+)?/i'
+            '/\bJOIN\s+([^\s,()]+)(?:\s+AS\s+[^\s,()]+)?/i',
         ];
 
         foreach ($patterns as $pattern) {
             preg_match_all($pattern, $sql, $matches);
-            if (!empty($matches[1])) {
+            if (! empty($matches[1])) {
                 foreach ($matches[1] as $tableName) {
                     // 过滤掉子查询和括号内容
                     if (strpos($tableName, '(') === false &&
-                        !in_array(strtoupper($tableName), ['SELECT', 'WITH'])) {
+                        ! in_array(strtoupper($tableName), ['SELECT', 'WITH'])) {
                         $tableNames[] = $tableName;
                     }
                 }
@@ -368,11 +384,11 @@ class QueryService
 
     /**
      * 记录SQL执行信息
-     * @param $params
-     * @param $exec_time
-     * @param $error
+     *
      * @return false|mixed
+     *
      * @author wxyClark
+     *
      * @create 2025/11/30 20:32
      *
      * @version 1.0
@@ -383,6 +399,7 @@ class QueryService
             return false;
         }
         $query_code = app(Snowflake::class)->id();
+
         return $this->queryRepository->create([
             'query_code' => $query_code,
             'sql' => $params['sql'],

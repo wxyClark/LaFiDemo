@@ -2,10 +2,8 @@
 
 namespace App\Modules\Dev\Http\Controllers;
 
-
 use App\Modules\Dev\Services\Dev\QueryService;
 use Illuminate\Http\Request;
-
 
 /**
  * Created by PhpStorm
@@ -16,7 +14,6 @@ use Illuminate\Http\Request;
  */
 class QueryController
 {
-
     protected $queryService;
 
     public function __construct(QueryService $queryService)

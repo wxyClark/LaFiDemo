@@ -31,9 +31,7 @@ class PcasRemoteProvider implements AddressProvider
 
     protected ?string $revision = null;
 
-    public function __construct(protected ?string $baseUrl = null)
-    {
-    }
+    public function __construct(protected ?string $baseUrl = null) {}
 
     public function name(): string
     {
@@ -46,7 +44,7 @@ class PcasRemoteProvider implements AddressProvider
             $json = $this->download('pcas-code.json');
             $csv = $this->download('streets.csv');
 
-            $this->revision = 'pcas@' . substr(sha1($json . $csv), 0, 16);
+            $this->revision = 'pcas@'.substr(sha1($json.$csv), 0, 16);
         }
 
         return $this->revision;
@@ -147,7 +145,7 @@ class PcasRemoteProvider implements AddressProvider
     }
 
     /**
-     * @param array{code: string, name: string, children?: array} $province
+     * @param  array{code: string, name: string, children?: array}  $province
      * @return array<int, array{code: string, name: string, level: string, level_num: int, parent_code: ?string, merge_path: array<int, string>}>
      */
     protected function flattenTree(array $province): array
@@ -217,7 +215,7 @@ class PcasRemoteProvider implements AddressProvider
         $path = $this->cachePath($file);
         File::ensureDirectoryExists(dirname($path));
 
-        $url = rtrim($this->baseUrl ?: (string) env('ADDRESS_IMPORT_BASE_URL') ?: static::DEFAULT_BASE_URL, '/') . '/' . $file;
+        $url = rtrim($this->baseUrl ?: (string) env('ADDRESS_IMPORT_BASE_URL') ?: static::DEFAULT_BASE_URL, '/').'/'.$file;
 
         $response = Http::withHeaders(['User-Agent' => 'laravel-address-import/1.0'])
             ->timeout(90)
@@ -234,6 +232,6 @@ class PcasRemoteProvider implements AddressProvider
 
     protected function cachePath(string $file): string
     {
-        return storage_path('app/address-import/' . $file);
+        return storage_path('app/address-import/'.$file);
     }
 }

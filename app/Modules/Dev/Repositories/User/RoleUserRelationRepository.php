@@ -16,10 +16,11 @@ use App\Modules\Dev\Repositories\Contracts\BaseRepositoryInterface;
 class RoleUserRelationRepository extends BaseRepository implements BaseRepositoryInterface
 {
     protected $inTermFields = [
-        'id', 'role_id', 'user_id', 'created_user_id', 'created_user_name'
+        'id', 'role_id', 'user_id', 'created_user_id', 'created_user_name',
     ];
+
     protected $timeRangeFields = [
-        'created_at', 'updated_at'
+        'created_at', 'updated_at',
     ];
 
     protected function model(): string

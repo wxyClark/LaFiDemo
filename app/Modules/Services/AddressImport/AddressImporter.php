@@ -8,6 +8,7 @@ use App\Modules\Services\AddressImport\Providers\AddressProvider;
 use App\Modules\Services\AddressService;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Log;
 use Overtrue\Pinyin\Pinyin;
 use RuntimeException;
 
@@ -28,9 +29,7 @@ class AddressImporter
     /** @var array<string, int> 本单元内 原始code -> id */
     protected array $codeToId = [];
 
-    public function __construct(protected AddressProvider $provider, protected ?AddressService $addressService = null)
-    {
-    }
+    public function __construct(protected AddressProvider $provider, protected ?AddressService $addressService = null) {}
 
     /**
      * @return array{imported: int, skipped: int, rows: int}
@@ -48,7 +47,7 @@ class AddressImporter
 
         if (($state['provider'] ?? null) !== $this->provider->name() || ($state['revision'] ?? null) !== $revision) {
             $state['completed'] = [];
-            \Illuminate\Support\Facades\Log::info('addresses:init 数据源/修订号变化，重置断点', [
+            Log::info('addresses:init 数据源/修订号变化，重置断点', [
                 'provider' => $this->provider->name(),
                 'revision' => $revision,
             ]);
@@ -88,8 +87,8 @@ class AddressImporter
 
             $this->saveState($state, $revision);
 
-            \Illuminate\Support\Facades\Log::info(
-                "addresses:init 单元完成 {$key} {$unit['name']} (" . count($rows) . " rows) " . ($index + 1) . '/' . count($units)
+            Log::info(
+                "addresses:init 单元完成 {$key} {$unit['name']} (".count($rows).' rows) '.($index + 1).'/'.count($units)
             );
         }
 
@@ -253,7 +252,7 @@ class AddressImporter
 
         File::ensureDirectoryExists(dirname($this->statePath()));
 
-        $tmp = $this->statePath() . '.tmp';
+        $tmp = $this->statePath().'.tmp';
         file_put_contents($tmp, json_encode($state, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
         rename($tmp, $this->statePath());
     }
