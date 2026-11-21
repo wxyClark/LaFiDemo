@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 /**
@@ -62,29 +63,16 @@ class QueryService
         $error = '';
         try {
             $sql = trim((string) $params['sql']);
-            // 大写副本仅用于安全校验与表名比对，不能拿去执行：
-            // MySQL 在 lower_case_table_names=0 下表名区分大小写，
-            // 直接执行 PRODUCTS 会得到 1146 Table 'PRODUCTS' doesn't exist
-            $upper = strtoupper($sql);
-            // 安全检查：确保只执行SELECT语句
-            $result = $this->checkQueryIsSafeSelect($upper);
-            if (! $result['status']) {
-                $this->createQuery($params, $exec_time, $error);
-
-                return $result;
-            }
-
-            //  检查表名是否允许访问
-            // 表名统一小写后再比对，否则大写副本会让 users/sessions 黑名单形同虚设
-            $tables = array_map('strtolower', $this->extractTables($upper));
-            $intersect = array_intersect($this->exceptTables, $tables);
-            if ($intersect) {
-                $error_msg = 'The following data table does not support access :'.implode(', ', $intersect);
-                $this->createQuery($params, $exec_time, $error_msg);
+            // 安全检查：只允许 SELECT 且不触碰受保护表。大写副本仅用于
+            // 校验与表名比对，不能拿去执行（MySQL 在 lower_case_table_names=0
+            // 下表名区分大小写，直接执行 PRODUCTS 会得到 1146）。
+            $reason = $this->unsafeSqlReason($sql);
+            if ($reason !== null) {
+                $this->createQuery($params, $exec_time, $reason);
 
                 return [
                     'status' => false,
-                    'error_msg' => $error_msg,
+                    'error_msg' => $reason,
                 ];
             }
 
@@ -133,6 +121,15 @@ class QueryService
 
     public function export($params)
     {
+        // 导出路径此前绕过 executeSql 的安全检查，可用任意 SQL 直接读库。
+        // 同一套守卫前置到两个导出分支之前，危险 SQL 在触碰数据库前即被拒绝。
+        $reason = $this->unsafeSqlReason($params['sql']);
+        if ($reason !== null) {
+            throw ValidationException::withMessages([
+                'sql' => [$reason],
+            ]);
+        }
+
         return match ($params['type']) {
             'excel' => $this->exportExcel($params),
             'json' => $this->exportJson($params),
@@ -268,6 +265,32 @@ class QueryService
         fclose($handle);
 
         return response()->download($filePath)->deleteFileAfterSend(false);
+    }
+
+    /**
+     * 统一安全检查：只允许 SELECT 且不触碰受保护表。
+     *
+     * 返回违规原因（字符串）或 null（通过）。executeSql 与导出路径共用，
+     * 确保任意读库入口都受到同一套限制。大写副本仅用于校验与表名比对，
+     * 不能拿去执行。
+     */
+    private function unsafeSqlReason(string $sql): ?string
+    {
+        $upper = strtoupper(trim($sql));
+
+        $result = $this->checkQueryIsSafeSelect($upper);
+        if (! $result['status']) {
+            return $result['error_msg'];
+        }
+
+        // 表名统一小写后再比对，否则大写副本会让 users/sessions 黑名单形同虚设
+        $tables = array_map('strtolower', $this->extractTables($upper));
+        $intersect = array_intersect($this->exceptTables, $tables);
+        if ($intersect) {
+            return 'The following data table does not support access :'.implode(', ', $intersect);
+        }
+
+        return null;
     }
 
     /**

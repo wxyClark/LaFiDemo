@@ -4,8 +4,10 @@ use App\Models\User;
 use App\Modules\Dev\Models\Query;
 use App\Modules\Dev\Repositories\Dev\QueryRepository;
 use App\Modules\Dev\Services\Dev\QueryService;
+use App\Modules\Domains\Catalog\Models\Product;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\File;
+use Illuminate\Validation\ValidationException;
 use PHPUnit\Framework\Assert;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
@@ -24,12 +26,12 @@ afterEach(function (): void {
  * 依赖必须来自 composer.json 已声明的包（openspout），且审计表 query 真实存在。
  */
 test('excel export writes a real xlsx file', function (): void {
-    User::factory()->create();
+    Product::factory()->create();
 
     $service = new QueryService(new QueryRepository);
 
     $response = $service->export([
-        'sql' => 'SELECT id, email FROM users',
+        'sql' => 'SELECT id, name FROM products',
         'type' => 'excel',
     ]);
 
@@ -41,12 +43,12 @@ test('excel export writes a real xlsx file', function (): void {
 });
 
 test('json export streams a valid json array', function (): void {
-    User::factory()->create();
+    Product::factory()->create();
 
     $service = new QueryService(new QueryRepository);
 
     $response = $service->export([
-        'sql' => 'SELECT id, email FROM users',
+        'sql' => 'SELECT id, name FROM products',
         'type' => 'json',
     ]);
 
@@ -70,6 +72,24 @@ test('the blocked table list is case insensitive', function (): void {
 
     expect($result['status'])->toBeFalse()
         ->and($result['error_msg'])->toContain('users');
+});
+
+test('the export path rejects sql that is not a safe select', function (): void {
+    Product::factory()->create();
+
+    $service = new QueryService(new QueryRepository);
+
+    // 非 SELECT（写入/删除类）在触碰数据库前被拒绝。
+    expect(fn () => $service->export([
+        'sql' => 'DELETE FROM products',
+        'type' => 'excel',
+    ]))->toThrow(ValidationException::class);
+
+    // 受保护表即使以 SELECT 形式出现也被拒绝（导出与 executeSql 同一套守卫）。
+    expect(fn () => $service->export([
+        'sql' => 'SELECT id FROM users',
+        'type' => 'json',
+    ]))->toThrow(ValidationException::class);
 });
 
 test('a select records an audited query row', function (): void {
