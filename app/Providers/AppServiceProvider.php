@@ -4,8 +4,8 @@ namespace App\Providers;
 
 use App\Modules\Catalog\Application\ProductPolicy;
 use App\Modules\Catalog\Application\VariantPolicy;
-use App\Modules\Catalog\Infrastructure\Product;
 use App\Modules\Catalog\Infrastructure\ProductVariant;
+use App\Modules\Domains\Catalog\Models\Product;
 use App\Modules\Inventory\Application\StockLedgerPolicy;
 use App\Modules\Inventory\Application\StockPolicy;
 use App\Modules\Inventory\Infrastructure\Stock;

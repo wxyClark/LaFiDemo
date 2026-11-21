@@ -18,6 +18,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  * @property string $name
  * @property string $type
  * @property string $status
+ * @property int|null $tenant_id
  * @property int|null $category_id
  * @property string|null $description
  */
@@ -35,6 +36,7 @@ class Product extends Model
 
     protected $fillable = [
         'name',
+        'tenant_id',
         'category_id',
         'type',
         'status',
@@ -42,6 +44,7 @@ class Product extends Model
     ];
 
     protected $casts = [
+        'tenant_id' => 'integer',
         'category_id' => 'integer',
     ];
 

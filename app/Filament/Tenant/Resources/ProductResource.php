@@ -4,8 +4,8 @@ namespace App\Filament\Tenant\Resources;
 
 use App\Filament\Tenant\Resources\ProductResource\Pages;
 use App\Modules\Catalog\Application\UpdateProductStatus;
-use App\Modules\Catalog\Domain\ProductStatus;
-use App\Modules\Catalog\Infrastructure\Product;
+use App\Modules\Domains\Catalog\Enums\ProductStatus;
+use App\Modules\Domains\Catalog\Models\Product;
 use App\Modules\Tenancy\Application\CurrentTenant;
 use Filament\Actions\Action;
 use Filament\Forms\Components\TextInput;
@@ -42,10 +42,9 @@ class ProductResource extends Resource
     public static function infolist(Schema $schema): Schema
     {
         return $schema->schema([
-            TextEntry::make('title')->label('名称'),
-            TextEntry::make('slug')->label('Slug'),
-            TextEntry::make('status')->label('状态')
-                ->formatStateUsing(fn (ProductStatus $state) => $state->value),
+            TextEntry::make('name')->label('名称'),
+            TextEntry::make('type')->label('类型'),
+            TextEntry::make('status')->label('状态'),
             TextEntry::make('created_at')->label('创建时间')->dateTime('Y-m-d H:i'),
         ]);
     }
@@ -55,27 +54,27 @@ class ProductResource extends Resource
         return $table
             ->columns([
                 TextColumn::make('id')->label('ID')->sortable(),
-                TextColumn::make('title')->label('名称')->searchable()->sortable(),
-                TextColumn::make('slug')->label('Slug')->searchable(),
+                TextColumn::make('name')->label('名称')->searchable()->sortable(),
+                TextColumn::make('type')->label('类型')->searchable(),
                 TextColumn::make('status')->label('状态')->badge()
-                    ->formatStateUsing(fn (ProductStatus $state) => $state->value)
-                    ->color(fn (ProductStatus $state) => $state === ProductStatus::Active ? 'success' : 'danger'),
+                    ->formatStateUsing(fn (string $state) => ProductStatus::tryFrom($state)?->label() ?? $state)
+                    ->color(fn (string $state) => $state === ProductStatus::ACTIVE->value ? 'success' : 'danger'),
                 TextColumn::make('created_at')->label('创建时间')->dateTime('Y-m-d H:i')->sortable(),
             ])
             ->actions([
                 Action::make('toggleStatus')
-                    ->label(fn (Product $record) => $record->status === ProductStatus::Active ? '下架' : '上架')
-                    ->icon(fn (Product $record) => $record->status === ProductStatus::Active ? 'heroicon-o-arrow-down' : 'heroicon-o-arrow-up')
-                    ->color(fn (Product $record) => $record->status === ProductStatus::Active ? 'danger' : 'success')
+                    ->label(fn (Product $record) => $record->status === ProductStatus::ACTIVE->value ? '下架' : '上架')
+                    ->icon(fn (Product $record) => $record->status === ProductStatus::ACTIVE->value ? 'heroicon-o-arrow-down' : 'heroicon-o-arrow-up')
+                    ->color(fn (Product $record) => $record->status === ProductStatus::ACTIVE->value ? 'danger' : 'success')
                     ->requiresConfirmation()
                     ->form([
                         TextInput::make('reason')->label('操作原因')->required(),
                     ])
                     ->authorize(fn (Product $record) => auth()->user()?->can('update', $record) ?? false)
                     ->action(function (Product $record, array $data): void {
-                        $newStatus = $record->status === ProductStatus::Active
-                            ? ProductStatus::Disabled
-                            : ProductStatus::Active;
+                        $newStatus = $record->status === ProductStatus::ACTIVE->value
+                            ? ProductStatus::INACTIVE
+                            : ProductStatus::ACTIVE;
 
                         app(UpdateProductStatus::class)(
                             (int) $record->getKey(),

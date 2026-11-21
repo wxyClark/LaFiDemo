@@ -3,8 +3,8 @@
 use App\Filament\Tenant\Resources\ProductResource;
 use App\Filament\Tenant\Resources\VariantResource;
 use App\Models\User;
-use App\Modules\Catalog\Infrastructure\Product;
 use App\Modules\Catalog\Infrastructure\ProductVariant;
+use App\Modules\Domains\Catalog\Models\Product;
 use App\Modules\Tenancy\Application\CurrentTenant;
 use App\Modules\Tenancy\Application\TenantContext;
 use App\Modules\Tenancy\Domain\Tenant;
