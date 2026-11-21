@@ -75,14 +75,14 @@ return new class extends Migration
         }
 
         $driver = DB::connection()->getDriverName();
-$indexName = "idx_{$table}_area_code_unique";
+        $indexName = "idx_{$table}_area_code_unique";
 
-// MySQL does not support "CREATE INDEX IF NOT EXISTS"; other drivers do.
-$sql = match ($driver) {
-    'sqlite', 'pgsql' => "CREATE UNIQUE INDEX IF NOT EXISTS {$indexName} ON {$table} (area_code)",
-    default => "CREATE UNIQUE INDEX {$indexName} ON {$table} (area_code)",
-};
+        // MySQL does not support "CREATE INDEX IF NOT EXISTS"; other drivers do.
+        $sql = match ($driver) {
+            'sqlite', 'pgsql' => "CREATE UNIQUE INDEX IF NOT EXISTS {$indexName} ON {$table} (area_code)",
+            default => "CREATE UNIQUE INDEX {$indexName} ON {$table} (area_code)",
+        };
 
-DB::statement($sql);
+        DB::statement($sql);
     }
 };
