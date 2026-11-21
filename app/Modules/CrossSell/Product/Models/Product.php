@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Modules\CrossSell\Product\Models;
 
 use App\Modules\CrossSell\Product\Enums\ProductStatus;
+use App\Modules\CrossSell\Tenant\Models\Tenant;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -80,7 +81,7 @@ class Product extends Model
     {
         $translation = $this->translations->firstWhere('language', $language);
 
-        return $translation?->title ?? $this->title;
+        return $translation->title ?? $this->title;
     }
 
     /**
@@ -90,6 +91,6 @@ class Product extends Model
     {
         $translation = $this->translations->firstWhere('language', $language);
 
-        return $translation?->description ?? $this->description;
+        return $translation->description ?? $this->description;
     }
 }

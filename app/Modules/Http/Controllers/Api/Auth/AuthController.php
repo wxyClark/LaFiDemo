@@ -8,12 +8,15 @@ use App\Http\Controllers\Controller;
 use App\Modules\Http\Requests\Api\Auth\LoginRequest;
 use App\Modules\Http\Requests\Api\Auth\RegisterRequest;
 use App\Modules\Http\Resources\AdminResource;
+use App\Modules\Infrastructure\Support\Traits\ApiResponse;
 use App\Modules\Services\AuthService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class AuthController extends Controller
 {
+    use ApiResponse;
+
     public function __construct(
         private readonly AuthService $authService
     ) {}

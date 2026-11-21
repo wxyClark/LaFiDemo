@@ -20,6 +20,7 @@ class TestExecutorService
      */
     public function execute(ApiTestCase $testCase, ?ApiEnvironment $environment = null): ApiTestResult
     {
+        /** @var ApiEnvironment $environment */
         $environment = $environment ?? $testCase->environment;
         $interface = $testCase->interface;
 

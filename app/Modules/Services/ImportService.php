@@ -4,14 +4,14 @@ declare(strict_types=1);
 
 namespace App\Modules\Services;
 
-use App\Modules\Domains\CrossSell\Enums\OrderStatus;
-use App\Modules\Domains\CrossSell\Enums\PlatformType;
-use App\Modules\Domains\CrossSell\Enums\ProductStatus;
-use App\Modules\Domains\CrossSell\Models\Inventory;
-use App\Modules\Domains\CrossSell\Models\Order;
-use App\Modules\Domains\CrossSell\Models\Product;
-use App\Modules\Domains\CrossSell\Models\SKU;
-use App\Modules\Domains\CrossSell\Models\Warehouse;
+use App\Modules\CrossSell\Order\Enums\OrderStatus;
+use App\Modules\CrossSell\Order\Models\Order;
+use App\Modules\CrossSell\Product\Enums\ProductStatus;
+use App\Modules\CrossSell\Product\Models\Product;
+use App\Modules\CrossSell\Product\Models\SKU;
+use App\Modules\CrossSell\Warehouse\Enums\PlatformType;
+use App\Modules\CrossSell\Warehouse\Models\Inventory;
+use App\Modules\CrossSell\Warehouse\Models\Warehouse;
 use App\Modules\Models\Address;
 use App\Modules\Models\Customer;
 use Illuminate\Support\Collection;

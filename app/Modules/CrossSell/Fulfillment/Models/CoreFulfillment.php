@@ -4,9 +4,10 @@ declare(strict_types=1);
 
 namespace App\Modules\CrossSell\Fulfillment\Models;
 
-use App\Modules\CrossSell\Database\Factories\FulfillmentFactory;
 use App\Modules\CrossSell\Enums\FulfillmentStatus;
 use App\Modules\CrossSell\Enums\FulfillmentType;
+use App\Modules\CrossSell\Order\Models\Order;
+use App\Modules\Domains\Fulfillment\Database\Factories\FulfillmentFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Modules\CrossSell\Fulfillment\Models;
 
+use App\Modules\CrossSell\Order\Models\OrderItem;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;

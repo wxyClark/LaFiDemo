@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Filament\Admin\Resources\CrossSellInventoryResource;
 
-use App\Modules\Domains\CrossSell\Models\Inventory;
+use App\Modules\CrossSell\Warehouse\Models\Inventory;
 use Filament\Actions\Exports\ExportColumn;
 use Filament\Actions\Exports\Exporter;
 use Filament\Actions\Exports\Models\Export;

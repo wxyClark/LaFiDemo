@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Modules\Http\Api\V1\CrossSell;
 
-use App\Modules\Domains\CrossSell\Models\Tenant;
+use App\Modules\CrossSell\Tenant\Models\Tenant;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 

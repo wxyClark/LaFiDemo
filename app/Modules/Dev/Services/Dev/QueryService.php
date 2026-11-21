@@ -9,6 +9,7 @@ use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Kra8\Snowflake\Snowflake;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 /**
  * Created by PhpStorm
@@ -120,7 +121,7 @@ class QueryService
 
         return $data ?? [
             'status' => false,
-            'error_msg' => $error ?? '',
+            'error_msg' => $error,
         ];
     }
 
@@ -136,7 +137,7 @@ class QueryService
     /**
      * 下载Excel文件
      *
-     * @return null
+     * @return void
      *
      * @throws \Exception
      *
@@ -189,7 +190,7 @@ class QueryService
                 $page++;
             }
 
-            return $this->xlsxToDown($writer, $fileName);
+            $this->xlsxToDown($writer, $fileName);
         } catch (\Exception $e) {
             Log::error($e->getMessage(), [
                 'code' => $e->getCode(),
@@ -203,7 +204,7 @@ class QueryService
     /**
      * 下载JSON文件
      *
-     * @return null
+     * @return BinaryFileResponse
      *
      * @throws \Exception
      *

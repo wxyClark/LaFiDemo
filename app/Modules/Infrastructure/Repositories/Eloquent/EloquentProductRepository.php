@@ -17,7 +17,10 @@ class EloquentProductRepository extends BaseRepository implements ProductReposit
 
     public function findProductOrFail(int $id): Product
     {
-        return $this->model->with('skus')->findOrFail($id);
+        /** @var Product $product */
+        $product = $this->model->with('skus')->findOrFail($id);
+
+        return $product;
     }
 
     public function allActive(): Collection

@@ -5,11 +5,14 @@ declare(strict_types=1);
 namespace App\Modules\Domains\Base\ApiTesting\Models;
 
 use App\Modules\Domains\Base\ApiTesting\Enums\AuthType;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class ApiEnvironment extends Model
 {
+    use HasFactory;
+
     protected $table = 'api_environments';
 
     protected $fillable = [

@@ -10,6 +10,7 @@ use App\Modules\Domains\Fulfillment\Models\Fulfillment;
 use App\Modules\Domains\Fulfillment\Models\Shipment;
 use App\Modules\Domains\Fulfillment\Models\VirtualCode;
 use App\Modules\Domains\Order\Models\Order;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Str;
 
 class FulfillmentService
@@ -68,7 +69,10 @@ class FulfillmentService
             throw new \RuntimeException('仅虚拟履约可重发');
         }
 
-        return $fulfillment->virtualCodes->map(
+        /** @var Collection<int, VirtualCode> $codes */
+        $codes = $fulfillment->virtualCodes;
+
+        return $codes->map(
             fn (VirtualCode $code) => [
                 'code' => $code->code,
                 'password' => $code->plainPassword(),

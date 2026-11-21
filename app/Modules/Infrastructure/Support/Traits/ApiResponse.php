@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace App\Modules\Infrastructure\Support\Traits;
 
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Resources\Json\JsonResource;
-use Illuminate\Pagination\LengthAwarePaginator;
 
 /**
  * API 响应标准化 Trait

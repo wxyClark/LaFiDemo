@@ -78,13 +78,13 @@ class AdminAuditLog extends Model
         ?array $oldValues = null,
         ?array $newValues = null,
         ?string $description = null,
-    ): static {
+    ): self {
         $admin = auth('admin')->user();
 
         return static::create([
-            'admin_id' => $admin?->id,
-            'admin_name' => $admin?->name ?? 'System',
-            'admin_email' => $admin?->email ?? 'system',
+            'admin_id' => $admin->id,
+            'admin_name' => $admin->name,
+            'admin_email' => $admin->email,
             'action' => $action,
             'subject_type' => $subject?->getMorphClass(),
             'subject_id' => $subject?->getKey(),

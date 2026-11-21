@@ -16,17 +16,26 @@ class AdminRepository extends BaseRepository implements AdminRepositoryInterface
 
     public function findById(int $id): ?Admin
     {
-        return $this->find($id);
+        /** @var Admin|null $admin */
+        $admin = $this->find($id);
+
+        return $admin;
     }
 
     public function findByEmail(string $email): ?Admin
     {
-        return $this->findBy('email', $email);
+        /** @var Admin|null $admin */
+        $admin = $this->findBy('email', $email);
+
+        return $admin;
     }
 
     public function create(array $data): Admin
     {
-        return parent::create($data);
+        /** @var Admin $admin */
+        $admin = parent::create($data);
+
+        return $admin;
     }
 
     public function emailExists(string $email): bool

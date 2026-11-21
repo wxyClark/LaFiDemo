@@ -4,7 +4,7 @@ namespace App\Modules\Dev\Models;
 
 use App\Models\User;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class Query extends Model
 {
@@ -17,7 +17,7 @@ class Query extends Model
     /**
      * 用户拥有的角色权限
      *
-     * @return HasMany
+     * @return HasOne
      *
      * @author wxyClark
      *

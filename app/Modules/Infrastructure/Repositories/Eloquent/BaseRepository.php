@@ -107,7 +107,7 @@ abstract class BaseRepository implements BaseRepositoryInterface
      */
     public function createMany(array $dataList): Collection
     {
-        $models = collect();
+        $models = new Collection;
 
         foreach ($dataList as $data) {
             $models->push($this->create($data));

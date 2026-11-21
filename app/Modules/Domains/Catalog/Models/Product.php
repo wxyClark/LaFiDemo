@@ -13,6 +13,14 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
+/**
+ * @property-read int $id
+ * @property string $name
+ * @property string $type
+ * @property string $status
+ * @property int|null $category_id
+ * @property string|null $description
+ */
 class Product extends Model
 {
     use HasFactory;

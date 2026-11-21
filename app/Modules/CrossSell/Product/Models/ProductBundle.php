@@ -4,9 +4,10 @@ declare(strict_types=1);
 
 namespace App\Modules\CrossSell\Product\Models;
 
-use App\Modules\CrossSell\Database\Factories\ProductBundleFactory;
 use App\Modules\CrossSell\Product\Enums\ProductStatus;
+use App\Modules\Domains\Catalog\Database\Factories\ProductBundleFactory;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -41,12 +42,15 @@ class ProductBundle extends Model
 
     public function scopeActive(Builder $query): Builder
     {
-        return $query->where('status', ProductStatus::ACTIVE->value);
+        return $query->where('status', ProductStatus::Active->value);
     }
 
     public function totalSkuPrice(): float
     {
-        return (float) $this->items->load('sku')
+        /** @var Collection<int, BundleItem> $items */
+        $items = $this->items->load('sku');
+
+        return (float) $items
             ->sum(fn (BundleItem $item) => (float) ($item->sku->price ?? 0) * $item->qty);
     }
 }

@@ -7,6 +7,7 @@ namespace App\Modules\Domains\Catalog\Models;
 use App\Modules\Domains\Catalog\Database\Factories\ProductBundleFactory;
 use App\Modules\Domains\Catalog\Enums\ProductStatus;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -46,7 +47,10 @@ class ProductBundle extends Model
 
     public function totalSkuPrice(): float
     {
-        return (float) $this->items->load('sku')
+        /** @var Collection<int, BundleItem> $items */
+        $items = $this->items->load('sku');
+
+        return (float) $items
             ->sum(fn (BundleItem $item) => (float) ($item->sku->price ?? 0) * $item->qty);
     }
 }

@@ -5,11 +5,16 @@ declare(strict_types=1);
 namespace App\Modules\Http\Resources\Json;
 
 use Illuminate\Http\Resources\Json\JsonResource;
+use Illuminate\Support\Carbon;
 
 /**
  * 基础 API 资源类
  *
  * 提供统一的 API 资源格式
+ *
+ * @property-read int $id
+ * @property-read Carbon|null $created_at
+ * @property-read Carbon|null $updated_at
  */
 abstract class BaseResource extends JsonResource
 {

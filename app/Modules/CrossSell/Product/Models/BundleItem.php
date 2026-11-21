@@ -28,6 +28,6 @@ class BundleItem extends Model
 
     public function sku(): BelongsTo
     {
-        return $this->belongsTo(Sku::class, 'sku_id');
+        return $this->belongsTo(SKU::class, 'sku_id');
     }
 }

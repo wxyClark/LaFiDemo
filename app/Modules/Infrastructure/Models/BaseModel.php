@@ -7,6 +7,7 @@ namespace App\Modules\Infrastructure\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Str;
 
 /**
@@ -18,6 +19,9 @@ use Illuminate\Support\Str;
  * - 自动填充
  * - 访问器
  * - 工厂支持
+ *
+ * @property-read Carbon|null $created_at
+ * @property-read Carbon|null $updated_at
  */
 abstract class BaseModel extends Model
 {
@@ -58,7 +62,7 @@ abstract class BaseModel extends Model
      */
     public function getSearchableFields(): array
     {
-        return $this->fillable ?? [];
+        return $this->fillable;
     }
 
     /**
@@ -188,13 +192,13 @@ abstract class BaseModel extends Model
      */
     public static function getStatistics(): array
     {
-        $model = new static;
+        $query = static::query();
 
         return [
-            'total' => $model->count(),
-            'today' => $model->whereDate('created_at', today())->count(),
-            'this_week' => $model->whereBetween('created_at', [now()->startOfWeek(), now()->endOfWeek()])->count(),
-            'this_month' => $model->whereMonth('created_at', now()->month)->count(),
+            'total' => $query->count(),
+            'today' => $query->whereDate('created_at', today())->count(),
+            'this_week' => $query->whereBetween('created_at', [now()->startOfWeek(), now()->endOfWeek()])->count(),
+            'this_month' => $query->whereMonth('created_at', now()->month)->count(),
         ];
     }
 }

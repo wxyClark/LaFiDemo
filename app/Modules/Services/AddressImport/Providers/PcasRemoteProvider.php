@@ -215,7 +215,7 @@ class PcasRemoteProvider implements AddressProvider
         $path = $this->cachePath($file);
         File::ensureDirectoryExists(dirname($path));
 
-        $url = rtrim($this->baseUrl ?: (string) env('ADDRESS_IMPORT_BASE_URL') ?: static::DEFAULT_BASE_URL, '/').'/'.$file;
+        $url = rtrim((string) config('services.address.import_base_url') ?: static::DEFAULT_BASE_URL, '/').'/'.$file;
 
         $response = Http::withHeaders(['User-Agent' => 'laravel-address-import/1.0'])
             ->timeout(90)

@@ -74,7 +74,7 @@ class AdminNotification extends Model
         string $orderNo,
         string $oldStatus,
         string $newStatus,
-    ): static {
+    ): self {
         return static::create([
             'admin_id' => $adminId,
             'type' => 'order_status_changed',
@@ -94,7 +94,7 @@ class AdminNotification extends Model
         string $skuCode,
         int $currentStock,
         int $threshold = 10,
-    ): static {
+    ): self {
         return static::create([
             'admin_id' => $adminId,
             'type' => 'low_stock',
@@ -114,7 +114,7 @@ class AdminNotification extends Model
         string $title,
         string $message,
         ?array $data = null,
-    ): static {
+    ): self {
         return static::create([
             'admin_id' => $adminId,
             'type' => 'system',

@@ -24,8 +24,8 @@ class AmapProvider implements AddressProvider
         protected ?string $key = null,
         protected ?string $baseUrl = null,
     ) {
-        $this->key ??= (string) env('AMAP_KEY', '');
-        $this->baseUrl ??= rtrim((string) env('ADDRESS_API_BASE_URL', 'https://restapi.amap.com'), '/');
+        $this->key ??= (string) config('services.address.amap_key', '');
+        $this->baseUrl ??= rtrim((string) config('services.address.amap_base_url', 'https://restapi.amap.com'), '/');
 
         if ($this->key === '') {
             throw new RuntimeException('AmapProvider 需要 AMAP_KEY（.env 或构造函数传入）');
@@ -47,7 +47,7 @@ class AmapProvider implements AddressProvider
 
     public function units(): array
     {
-        $units = $this->district('中国', 0)
+        $units = collect($this->district('中国', 0))
             ->map(fn (array $d) => ['key' => $d['adcode'], 'name' => $d['name']])
             // 港澳台用内置权威编码数据，避免与高德数据重复
             ->filter(fn (array $u) => ! preg_match('/^(71|81|82)/', $u['key']))
@@ -107,9 +107,6 @@ class AmapProvider implements AddressProvider
         return $json['districts'] ?? [];
     }
 
-    /**
-     * @param  array{rows: array}  $holder
-     */
     protected function walk(array $node, ?string $parentAdcode, int $levelNum, array &$rows, array $path = []): void
     {
         $adcode = (string) ($node['adcode'] ?? '');

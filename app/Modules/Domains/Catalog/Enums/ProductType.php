@@ -21,4 +21,12 @@ enum ProductType: string
     {
         return $this === self::VIRTUAL;
     }
+
+    public function color(): string
+    {
+        return match ($this) {
+            self::ENTITY => 'success',
+            self::VIRTUAL => 'warning',
+        };
+    }
 }

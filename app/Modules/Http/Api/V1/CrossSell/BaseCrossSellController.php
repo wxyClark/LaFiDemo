@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Modules\Http\Api\V1\CrossSell;
 
 use App\Http\Controllers\Controller;
+use App\Modules\Infrastructure\Support\Traits\ApiResponse;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -19,6 +20,8 @@ use Illuminate\Http\Request;
  */
 abstract class BaseCrossSellController extends Controller
 {
+    use ApiResponse;
+
     /**
      * 获取当前用户的租户 ID
      */

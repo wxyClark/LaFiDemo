@@ -8,6 +8,7 @@ use App\Http\Controllers\Controller;
 use App\Modules\Http\Requests\Api\User\StoreCustomerRequest;
 use App\Modules\Http\Requests\Api\User\UpdateCustomerRequest;
 use App\Modules\Http\Resources\CustomerResource;
+use App\Modules\Infrastructure\Support\Traits\ApiResponse;
 use App\Modules\Models\Customer;
 use App\Modules\Services\CustomerService;
 use Illuminate\Http\JsonResponse;
@@ -15,6 +16,8 @@ use Illuminate\Http\Request;
 
 class CustomerController extends Controller
 {
+    use ApiResponse;
+
     public function __construct(
         private readonly CustomerService $customerService
     ) {}

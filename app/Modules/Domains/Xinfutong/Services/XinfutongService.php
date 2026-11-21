@@ -11,6 +11,7 @@ use App\Modules\Domains\Xinfutong\Models\Account;
 use App\Modules\Domains\Xinfutong\Models\ApprovalRequest;
 use App\Modules\Domains\Xinfutong\Models\Employee;
 use App\Modules\Domains\Xinfutong\Models\SyncLog;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
@@ -485,7 +486,10 @@ class XinfutongService
      */
     public static function getAvailableAccounts(): array
     {
-        return Account::getActive()
+        /** @var Collection<int, Account> $accounts */
+        $accounts = Account::getActive();
+
+        return $accounts
             ->map(fn (Account $account) => [
                 'id' => $account->id,
                 'company_name' => $account->company_name,

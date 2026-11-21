@@ -6,6 +6,9 @@ namespace App\Modules\CrossSell\Fulfillment\Models;
 
 use App\Modules\CrossSell\Fulfillment\Enums\ShipmentStatus;
 use App\Modules\CrossSell\Order\Models\Order;
+use App\Modules\CrossSell\Tenant\Models\Tenant;
+use App\Modules\CrossSell\Warehouse\Models\LogisticsChannel;
+use App\Modules\CrossSell\Warehouse\Models\Warehouse;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;

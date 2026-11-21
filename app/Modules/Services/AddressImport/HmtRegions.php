@@ -55,7 +55,7 @@ final class HmtRegions
     }
 
     /**
-     * @return array<string, array{code: string, name: string, children: array}>
+     * @return array<int|string, array<string, mixed>>
      */
     private static function tree(): array
     {

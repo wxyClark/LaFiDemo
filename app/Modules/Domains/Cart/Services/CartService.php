@@ -68,9 +68,12 @@ class CartService
 
     public function selectedTotal(Cart $cart): float
     {
-        return (float) $cart->selectedItems()
+        /** @var Collection<int, CartItem> $items */
+        $items = $cart->selectedItems()
             ->with('sku')
-            ->get()
+            ->get();
+
+        return (float) $items
             ->sum(fn (CartItem $item) => (float) ($item->sku->price ?? 0) * $item->qty);
     }
 

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Modules\CrossSell\Fulfillment\Models;
 
+use App\Modules\Domains\Fulfillment\Models\Fulfillment;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Facades\Crypt;

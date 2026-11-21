@@ -17,17 +17,26 @@ class CustomerRepository extends BaseRepository implements CustomerRepositoryInt
 
     public function findById(int $id): ?Customer
     {
-        return $this->find($id);
+        /** @var Customer|null $customer */
+        $customer = $this->find($id);
+
+        return $customer;
     }
 
     public function findByEmail(string $email): ?Customer
     {
-        return $this->findBy('email', $email);
+        /** @var Customer|null $customer */
+        $customer = $this->findBy('email', $email);
+
+        return $customer;
     }
 
     public function create(array $data): Customer
     {
-        return parent::create($data);
+        /** @var Customer $customer */
+        $customer = parent::create($data);
+
+        return $customer;
     }
 
     public function updateModel(Customer $customer, array $data): Customer

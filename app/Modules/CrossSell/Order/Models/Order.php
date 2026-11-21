@@ -4,10 +4,11 @@ declare(strict_types=1);
 
 namespace App\Modules\CrossSell\Order\Models;
 
-use App\Domains\Notification\Events\OrderStatusChanged;
+use App\Modules\CrossSell\Fulfillment\Models\Shipment;
 use App\Modules\CrossSell\Order\Enums\OrderStatus;
 use App\Modules\CrossSell\Tenant\Models\Tenant;
 use App\Modules\CrossSell\Warehouse\Enums\PlatformType;
+use App\Modules\Domains\Notification\Events\OrderStatusChanged;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;

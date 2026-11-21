@@ -261,7 +261,7 @@ class CrossSellProductResource extends Resource
 
                         Infolists\Components\ImageEntry::make('images')
                             ->label('详情图')
-                            ->multiple(),
+                            ->formatStateUsing(fn ($state) => is_array($state) ? implode(', ', $state) : $state),
                     ])
                     ->columns(2),
 

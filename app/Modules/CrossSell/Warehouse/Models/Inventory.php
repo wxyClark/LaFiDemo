@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace App\Modules\CrossSell\Warehouse\Models;
 
-use App\Domains\Notification\Events\LowStockDetected;
 use App\Modules\CrossSell\Product\Models\SKU;
 use App\Modules\CrossSell\Tenant\Models\Tenant;
+use App\Modules\Domains\Notification\Events\LowStockDetected;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -105,8 +105,11 @@ class Inventory extends Model
     protected function checkLowStock(): void
     {
         if ($this->isLowStock()) {
+            /** @var SKU $sku */
+            $sku = $this->sku;
+
             LowStockDetected::dispatch(
-                sku: $this->sku,
+                sku: $sku,
                 currentStock: $this->quantity,
                 threshold: $this->min_stock,
             );

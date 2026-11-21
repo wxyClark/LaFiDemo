@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Modules\CrossSell\Payment\Models;
 
-use App\Modules\CrossSell\Database\Factories\WalletFactory;
+use App\Modules\Domains\Payment\Database\Factories\WalletFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;

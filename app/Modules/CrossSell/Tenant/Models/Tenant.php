@@ -4,9 +4,13 @@ declare(strict_types=1);
 
 namespace App\Modules\CrossSell\Tenant\Models;
 
+use App\Modules\CrossSell\Product\Models\Department;
+use App\Modules\CrossSell\Product\Models\Role;
 use App\Modules\CrossSell\Product\Models\User;
 use App\Modules\CrossSell\Tenant\Enums\TenantPlan;
 use App\Modules\CrossSell\Tenant\Enums\TenantStatus;
+use App\Modules\CrossSell\Warehouse\Models\PlatformConfig;
+use App\Modules\CrossSell\Warehouse\Models\Warehouse;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;

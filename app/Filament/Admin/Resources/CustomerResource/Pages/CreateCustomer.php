@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Filament\Admin\Resources\CustomerResource\Pages;
 
 use App\Filament\Admin\Resources\CustomerResource;
-use App\Modules\Domains\Logging\Models\AdminAuditLog;
+use App\Modules\Domains\Base\Logging\Models\AdminAuditLog;
 use Filament\Resources\Pages\CreateRecord;
 
 class CreateCustomer extends CreateRecord

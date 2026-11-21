@@ -198,7 +198,9 @@ class ApiTestResultResource extends Resource
 
                                 Infolists\Components\TextEntry::make('passed')
                                     ->label('结果')
-                                    ->boolean(),
+                                    ->badge()
+                                    ->formatStateUsing(fn (bool $state): string => $state ? '通过' : '失败')
+                                    ->color(fn (bool $state): string => $state ? 'success' : 'danger'),
 
                                 Infolists\Components\TextEntry::make('path')
                                     ->label('路径')

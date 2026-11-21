@@ -10,16 +10,16 @@ class AutoFillLogin extends Login
 {
     public function mount(): void
     {
-        $email = env('FILAMENT_ADMIN_PREFILL_EMAIL');
-        $password = env('FILAMENT_ADMIN_PREFILL_PASSWORD');
+        $email = config('services.filament_admin.prefill_email');
+        $password = config('services.filament_admin.prefill_password');
 
         if ($email !== null && $password !== null) {
-            // Filament 5 keeps the form state in a nested array (`data` => [state]).
-            $this->data = [[
+            // Prefill the login form before the parent mounts it.
+            $this->data = [
                 'email' => $email,
                 'password' => $password,
                 'remember' => true,
-            ]];
+            ];
         }
 
         parent::mount();

@@ -2,7 +2,7 @@
 
 namespace App\Modules\Dev\Repositories\User;
 
-use App\Modules\Dev\Models\User\user;
+use App\Modules\Dev\Models\User\User;
 use App\Modules\Dev\Repositories\BaseRepository;
 use App\Modules\Dev\Repositories\Contracts\BaseRepositoryInterface;
 
@@ -25,6 +25,6 @@ class UserRepository extends BaseRepository implements BaseRepositoryInterface
 
     protected function model(): string
     {
-        return user::class;
+        return User::class;
     }
 }
