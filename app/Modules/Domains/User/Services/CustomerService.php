@@ -9,9 +9,9 @@ use App\Modules\Domains\User\Data\CustomerUpdateData;
 use App\Modules\Domains\User\Events\CustomerDeleted;
 use App\Modules\Domains\User\Events\CustomerRegistered;
 use App\Modules\Domains\User\Events\CustomerUpdated;
+use App\Modules\Domains\User\Models\Customer;
 use App\Modules\Domains\User\Repositories\CustomerRepositoryInterface;
 use App\Modules\Infrastructure\Services\BaseService;
-use App\Modules\Models\Customer;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Validation\ValidationException;
 

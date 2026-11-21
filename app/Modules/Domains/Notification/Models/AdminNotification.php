@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Modules\Domains\Notification\Models;
 
-use App\Modules\Models\Admin;
+use App\Modules\Domains\Auth\Models\Admin;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\MorphTo;

@@ -1,8 +1,8 @@
 <?php
 
 use App\Models\User;
-use App\Modules\Models\Admin;
-use App\Modules\Models\Customer;
+use App\Modules\Domains\Auth\Models\Admin;
+use App\Modules\Domains\User\Models\Customer;
 
 return [
 

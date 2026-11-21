@@ -8,9 +8,9 @@ use App\Http\Controllers\Controller;
 use App\Modules\Domains\User\Http\Requests\StoreCustomerRequest;
 use App\Modules\Domains\User\Http\Requests\UpdateCustomerRequest;
 use App\Modules\Domains\User\Http\Resources\CustomerResource;
+use App\Modules\Domains\User\Models\Customer;
 use App\Modules\Domains\User\Services\CustomerService;
 use App\Modules\Infrastructure\Support\Traits\ApiResponse;
-use App\Modules\Models\Customer;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 

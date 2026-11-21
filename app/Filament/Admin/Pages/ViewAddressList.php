@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Filament\Admin\Pages;
 
 use App\Filament\Admin\Concerns\HasExportAction;
-use App\Modules\Services\AddressService;
+use App\Modules\Domains\Address\Services\AddressService;
 use BackedEnum;
 use Filament\Pages\Page;
 use Illuminate\Contracts\Pagination\Paginator;

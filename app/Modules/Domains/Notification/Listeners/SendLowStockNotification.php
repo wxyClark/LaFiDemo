@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace App\Modules\Domains\Notification\Listeners;
 
+use App\Modules\Domains\Auth\Models\Admin;
 use App\Modules\Domains\Catalog\Models\Product;
 use App\Modules\Domains\Notification\Events\LowStockDetected;
 use App\Modules\Domains\Notification\Models\AdminNotification;
-use App\Modules\Models\Admin;
 
 class SendLowStockNotification
 {

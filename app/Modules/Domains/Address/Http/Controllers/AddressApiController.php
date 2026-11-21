@@ -1,10 +1,10 @@
 <?php
 
-namespace App\Modules\Http\Controllers\Api;
+namespace App\Modules\Domains\Address\Http\Controllers;
 
 use App\Http\Controllers\Controller;
-use App\Modules\Http\Requests\Api\Address\AddressChildrenRequest;
-use App\Modules\Services\AddressService;
+use App\Modules\Domains\Address\Http\Requests\AddressChildrenRequest;
+use App\Modules\Domains\Address\Services\AddressService;
 use Illuminate\Http\JsonResponse;
 
 class AddressApiController extends Controller

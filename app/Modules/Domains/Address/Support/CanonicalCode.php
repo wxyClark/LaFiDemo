@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Modules\Services\AddressImport;
+namespace App\Modules\Domains\Address\Support;
 
 final class CanonicalCode
 {

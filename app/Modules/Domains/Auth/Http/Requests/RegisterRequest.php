@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Modules\Domains\Auth\Http\Requests;
 
-use App\Modules\Models\Admin;
+use App\Modules\Domains\Auth\Models\Admin;
 use Illuminate\Foundation\Http\FormRequest;
 
 class RegisterRequest extends FormRequest

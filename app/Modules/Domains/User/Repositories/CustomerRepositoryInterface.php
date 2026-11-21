@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Modules\Domains\User\Repositories;
 
-use App\Modules\Models\Customer;
+use App\Modules\Domains\User\Models\Customer;
 use Illuminate\Pagination\LengthAwarePaginator;
 
 interface CustomerRepositoryInterface

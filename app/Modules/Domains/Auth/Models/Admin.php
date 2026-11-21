@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Modules\Models;
+namespace App\Modules\Domains\Auth\Models;
 
 use Filament\Models\Contracts\FilamentUser;
 use Filament\Panel;

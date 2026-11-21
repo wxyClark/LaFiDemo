@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Modules\Domains\User\Data;
 
-use App\Modules\Models\Customer;
+use App\Modules\Domains\User\Models\Customer;
 use Illuminate\Contracts\Support\Arrayable;
 
 readonly class CustomerData implements Arrayable

@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace App\Modules\Services;
+namespace App\Modules\Domains\Address\Services;
 
-use App\Modules\Models\Address;
-use App\Modules\Services\AddressImport\CanonicalCode;
+use App\Modules\Domains\Address\Models\Address;
+use App\Modules\Domains\Address\Support\CanonicalCode;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;

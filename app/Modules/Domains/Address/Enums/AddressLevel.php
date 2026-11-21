@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Modules\Models\Enums;
+namespace App\Modules\Domains\Address\Enums;
 
 enum AddressLevel: string
 {

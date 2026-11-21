@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Modules\Domains\Auth\Repositories;
 
+use App\Modules\Domains\Auth\Models\Admin;
 use App\Modules\Infrastructure\Repositories\Eloquent\BaseRepository;
-use App\Modules\Models\Admin;
 
 class AdminRepository extends BaseRepository implements AdminRepositoryInterface
 {

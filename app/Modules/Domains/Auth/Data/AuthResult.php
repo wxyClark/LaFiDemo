@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Modules\Domains\Auth\Data;
 
-use App\Modules\Models\Admin;
+use App\Modules\Domains\Auth\Models\Admin;
 use Illuminate\Contracts\Support\Arrayable;
 
 readonly class AuthResult implements Arrayable

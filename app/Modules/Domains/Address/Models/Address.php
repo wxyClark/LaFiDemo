@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Modules\Models;
+namespace App\Modules\Domains\Address\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -11,18 +11,18 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 /**
- * @method static \Illuminate\Database\Eloquent\Builder|\App\Modules\Models\Address where($attribute, $operator = null, $value = null, $boolean = 'and')
- * @method static \Illuminate\Database\Eloquent\Builder|\App\Modules\Models\Address whereParentId($value)
- * @method static \Illuminate\Database\Eloquent\Builder|\App\Modules\Models\Address whereName($value)
- * @method static \Illuminate\Database\Eloquent\Builder|\App\Modules\Models\Address whereCode($value)
- * @method static \Illuminate\Database\Eloquent\Builder|\App\Modules\Models\Address whereLevel($value)
- * @method static \Illuminate\Database\Eloquent\Builder|\App\Modules\Models\Address whereLevelNum($value)
- * @method static \Illuminate\Database\Eloquent\Builder|\App\Modules\Models\Address wherePinyin($value)
- * @method static \Illuminate\Database\Eloquent\Builder|\App\Modules\Models\Address whereMergePath($value)
- * @method static \Illuminate\Database\Eloquent\Builder|\App\Modules\Models\Address whereSort($value)
- * @method static \Illuminate\Database\Eloquent\Builder|\App\Modules\Models\Address newModelQuery()
- * @method static \Illuminate\Database\Eloquent\Builder|\App\Modules\Models\Address newQuery()
- * @method static \Illuminate\Database\Eloquent\Builder|\App\Modules\Models\Address query()
+ * @method static \Illuminate\Database\Eloquent\Builder|\App\Modules\Domains\Address\Models\Address where($attribute, $operator = null, $value = null, $boolean = 'and')
+ * @method static \Illuminate\Database\Eloquent\Builder|\App\Modules\Domains\Address\Models\Address whereParentId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder|\App\Modules\Domains\Address\Models\Address whereName($value)
+ * @method static \Illuminate\Database\Eloquent\Builder|\App\Modules\Domains\Address\Models\Address whereCode($value)
+ * @method static \Illuminate\Database\Eloquent\Builder|\App\Modules\Domains\Address\Models\Address whereLevel($value)
+ * @method static \Illuminate\Database\Eloquent\Builder|\App\Modules\Domains\Address\Models\Address whereLevelNum($value)
+ * @method static \Illuminate\Database\Eloquent\Builder|\App\Modules\Domains\Address\Models\Address wherePinyin($value)
+ * @method static \Illuminate\Database\Eloquent\Builder|\App\Modules\Domains\Address\Models\Address whereMergePath($value)
+ * @method static \Illuminate\Database\Eloquent\Builder|\App\Modules\Domains\Address\Models\Address whereSort($value)
+ * @method static \Illuminate\Database\Eloquent\Builder|\App\Modules\Domains\Address\Models\Address newModelQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder|\App\Modules\Domains\Address\Models\Address newQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder|\App\Modules\Domains\Address\Models\Address query()
  *
  * @mixin \Eloquent
  */

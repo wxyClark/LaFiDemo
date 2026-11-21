@@ -3,7 +3,7 @@
 namespace Database\Seeders;
 
 use App\Models\User;
-use App\Modules\Models\Admin;
+use App\Modules\Domains\Auth\Models\Admin;
 use App\Modules\Tenancy\Domain\Tenant;
 use App\Modules\Tenancy\Domain\TenantStatus;
 use App\Modules\Tenancy\Domain\UserRole;

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Modules\Http\Requests\Api\Address;
+namespace App\Modules\Domains\Address\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
 
