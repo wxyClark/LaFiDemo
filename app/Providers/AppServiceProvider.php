@@ -5,7 +5,11 @@ namespace App\Providers;
 use App\Modules\Catalog\Application\ProductPolicy;
 use App\Modules\Catalog\Application\VariantPolicy;
 use App\Modules\Catalog\Infrastructure\ProductVariant;
+use App\Modules\Domains\Auth\Repositories\AdminRepositoryInterface;
 use App\Modules\Domains\Catalog\Models\Product;
+use App\Modules\Domains\User\Repositories\CustomerRepositoryInterface;
+use App\Modules\Infrastructure\Repositories\Eloquent\AdminRepository;
+use App\Modules\Infrastructure\Repositories\Eloquent\CustomerRepository;
 use App\Modules\Inventory\Application\StockLedgerPolicy;
 use App\Modules\Inventory\Application\StockPolicy;
 use App\Modules\Inventory\Infrastructure\Stock;
@@ -26,6 +30,11 @@ class AppServiceProvider extends ServiceProvider
         // 请求作用域的当前租户上下文：必须单例（中间件写入、资源/用例读取
         // 同一实例；默认 auto-resolution 每次 make 新实例会丢失上下文）。
         $this->app->singleton(CurrentTenant::class);
+
+        // 遗留业务接口的仓储实现：AuthService/CustomerService 按接口注入，
+        // 此前从未绑定，routes/laf/* 的鉴权与客户接口因此全部 500。
+        $this->app->bind(AdminRepositoryInterface::class, AdminRepository::class);
+        $this->app->bind(CustomerRepositoryInterface::class, CustomerRepository::class);
     }
 
     /**

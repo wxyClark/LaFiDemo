@@ -2,6 +2,7 @@
 
 use App\Models\User;
 use App\Modules\Models\Admin;
+use App\Modules\Models\Customer;
 
 return [
 
@@ -49,6 +50,19 @@ return [
             'driver' => 'session',
             'provider' => 'admins',
         ],
+
+        // 遗留业务 API 的 JWT 守卫：routes/laf/* 全部使用 auth:admin-api，
+        // 此前该守卫未定义，登录/取当前用户/客户接口一律 500。
+        'admin-api' => [
+            'driver' => 'jwt',
+            'provider' => 'admins',
+        ],
+
+        // 遗留客户模型的 $guard 声明（Models\Customer）
+        'customer' => [
+            'driver' => 'session',
+            'provider' => 'customers',
+        ],
     ],
 
     /*
@@ -78,6 +92,12 @@ return [
         'admins' => [
             'driver' => 'eloquent',
             'model' => Admin::class,
+        ],
+
+        // 遗留业务客户模型
+        'customers' => [
+            'driver' => 'eloquent',
+            'model' => Customer::class,
         ],
 
         // 'users' => [
