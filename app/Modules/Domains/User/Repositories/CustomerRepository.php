@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace App\Modules\Infrastructure\Repositories\Eloquent;
+namespace App\Modules\Domains\User\Repositories;
 
-use App\Modules\Domains\User\Repositories\CustomerRepositoryInterface;
+use App\Modules\Infrastructure\Repositories\Eloquent\BaseRepository;
 use App\Modules\Models\Customer;
 use Illuminate\Pagination\LengthAwarePaginator;
 

@@ -2,15 +2,15 @@
 
 declare(strict_types=1);
 
-namespace App\Modules\Http\Controllers\Api\User;
+namespace App\Modules\Domains\User\Http\Controllers;
 
 use App\Http\Controllers\Controller;
-use App\Modules\Http\Requests\Api\User\StoreCustomerRequest;
-use App\Modules\Http\Requests\Api\User\UpdateCustomerRequest;
-use App\Modules\Http\Resources\CustomerResource;
+use App\Modules\Domains\User\Http\Requests\StoreCustomerRequest;
+use App\Modules\Domains\User\Http\Requests\UpdateCustomerRequest;
+use App\Modules\Domains\User\Http\Resources\CustomerResource;
+use App\Modules\Domains\User\Services\CustomerService;
 use App\Modules\Infrastructure\Support\Traits\ApiResponse;
 use App\Modules\Models\Customer;
-use App\Modules\Services\CustomerService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-use App\Modules\Http\Controllers\Api\Auth\AuthController;
+use App\Modules\Domains\Auth\Http\Controllers\AuthController;
 use Illuminate\Support\Facades\Route;
 
 /*

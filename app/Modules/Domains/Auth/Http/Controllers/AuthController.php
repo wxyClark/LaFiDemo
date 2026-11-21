@@ -2,14 +2,14 @@
 
 declare(strict_types=1);
 
-namespace App\Modules\Http\Controllers\Api\Auth;
+namespace App\Modules\Domains\Auth\Http\Controllers;
 
 use App\Http\Controllers\Controller;
-use App\Modules\Http\Requests\Api\Auth\LoginRequest;
-use App\Modules\Http\Requests\Api\Auth\RegisterRequest;
-use App\Modules\Http\Resources\AdminResource;
+use App\Modules\Domains\Auth\Http\Requests\LoginRequest;
+use App\Modules\Domains\Auth\Http\Requests\RegisterRequest;
+use App\Modules\Domains\Auth\Http\Resources\AdminResource;
+use App\Modules\Domains\Auth\Services\AuthService;
 use App\Modules\Infrastructure\Support\Traits\ApiResponse;
-use App\Modules\Services\AuthService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 

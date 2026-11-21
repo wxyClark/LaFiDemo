@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Modules\Services;
+namespace App\Modules\Domains\Auth\Services;
 
 use App\Modules\Domains\Auth\Data\AuthResult;
 use App\Modules\Domains\Auth\Data\LoginData;

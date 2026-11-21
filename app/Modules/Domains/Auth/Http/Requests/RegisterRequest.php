@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Modules\Http\Requests\Api\Auth;
+namespace App\Modules\Domains\Auth\Http\Requests;
 
 use App\Modules\Models\Admin;
 use Illuminate\Foundation\Http\FormRequest;

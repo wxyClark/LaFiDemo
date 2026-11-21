@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Modules\Services;
+namespace App\Modules\Domains\User\Services;
 
 use App\Modules\Domains\User\Data\CustomerCreateData;
 use App\Modules\Domains\User\Data\CustomerUpdateData;
