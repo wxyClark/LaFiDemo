@@ -14,12 +14,13 @@ use App\Modules\Infrastructure\Services\BaseService;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
 use Throwable;
-use Tymon\JWTAuth\Facades\JWTAuth;
+use Tymon\JWTAuth\JWTAuth;
 
 class AuthService extends BaseService
 {
     public function __construct(
-        private readonly AdminRepositoryInterface $adminRepository
+        private readonly AdminRepositoryInterface $adminRepository,
+        private readonly JWTAuth $jwt,
     ) {}
 
     public function register(array $data): AuthResult
@@ -36,7 +37,7 @@ class AuthService extends BaseService
 
         event(new AdminRegistered($admin));
 
-        $token = JWTAuth::fromUser($admin);
+        $token = $this->jwt->fromUser($admin);
 
         return new AuthResult(
             admin: $admin,
@@ -57,7 +58,7 @@ class AuthService extends BaseService
             ]);
         }
 
-        $token = JWTAuth::fromUser($admin);
+        $token = $this->jwt->fromUser($admin);
 
         return new AuthResult(
             admin: $admin,
@@ -69,7 +70,7 @@ class AuthService extends BaseService
     public function logout(Admin $admin): void
     {
         try {
-            JWTAuth::invalidate();
+            $this->jwt->invalidate();
         } catch (Throwable) {
             // Token missing or already invalid — safe no-op.
         }
@@ -77,6 +78,6 @@ class AuthService extends BaseService
 
     public function refresh(Admin $admin): string
     {
-        return JWTAuth::fromUser($admin);
+        return $this->jwt->fromUser($admin);
     }
 }
