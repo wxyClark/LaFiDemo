@@ -9,9 +9,6 @@ parameters:
         - database
         - tests
     ignoreErrors:
-        # Dev module uses optional third-party classes not installed as dependencies.
-        - identifier: class.notFound
-          path: app/Modules/Dev/**/*.php
         # JWTAuth facade forwards calls via __callStatic (larastan cannot resolve).
         - identifier: staticMethod.notFound
           message: '#Tymon\\JWTAuth\\Facades\\JWTAuth#'
