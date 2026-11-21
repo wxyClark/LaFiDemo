@@ -74,6 +74,15 @@ return new class extends Migration
             throw new RuntimeException("addresses 表存在重复 area_code ({$count} 组)，无法建立唯一约束，请检查数据");
         }
 
-        DB::statement("CREATE UNIQUE INDEX IF NOT EXISTS idx_{$table}_area_code_unique ON {$table} (area_code)");
+        $driver = DB::connection()->getDriverName();
+$indexName = "idx_{$table}_area_code_unique";
+
+// MySQL does not support "CREATE INDEX IF NOT EXISTS"; other drivers do.
+$sql = match ($driver) {
+    'sqlite', 'pgsql' => "CREATE UNIQUE INDEX IF NOT EXISTS {$indexName} ON {$table} (area_code)",
+    default => "CREATE UNIQUE INDEX {$indexName} ON {$table} (area_code)",
+};
+
+DB::statement($sql);
     }
 };
