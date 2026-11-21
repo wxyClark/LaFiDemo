@@ -1,0 +1,11 @@
+# Gitleaks allowlist for known false positives in the Xinfutong module.
+# These are placeholder/sample strings (faker-generated and "your_..._here"
+# documentation examples), NOT real credentials. The CI `secrets` job runs
+# `gitleaks/gitleaks-action` which flags the `private-key` rule on them.
+
+[allowlist]
+description = "Placeholder private/public key strings in Xinfutong factories and docs"
+paths = [
+  '''app/Modules/Domains/Xinfutong/Database/Factories/AccountFactory\.php''',
+  '''app/Modules/Domains/Xinfutong/README\.md''',
+]
