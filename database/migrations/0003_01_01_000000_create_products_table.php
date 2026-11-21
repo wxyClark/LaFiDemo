@@ -18,7 +18,7 @@ return new class extends Migration
     {
         Schema::create('products', function (Blueprint $table) {
             $table->id();
-            $table->unsignedBigInteger('tenant_id')->index();
+            $table->unsignedBigInteger('tenant_id')->nullable()->index();
             $table->string('slug', 100)->nullable();
             $table->string('title', 200)->nullable();
             $table->text('description')->nullable();
