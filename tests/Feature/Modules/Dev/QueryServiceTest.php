@@ -6,6 +6,7 @@ use App\Modules\Dev\Repositories\Dev\QueryRepository;
 use App\Modules\Dev\Services\Dev\QueryService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\File;
+use PHPUnit\Framework\Assert;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 uses(RefreshDatabase::class);
@@ -67,8 +68,13 @@ test('a select records an audited query row', function (): void {
         'need_insert_query' => true,
     ]);
 
-    expect($result['status'], 'executeSql error_msg: '.($result['error_msg'] ?? 'n/a'))
-        ->toBeTrue()
-        ->and(Query::count())->toBe(1)
+    // Larastan's Pest stub types expect() as single-argument, so the message-carrying
+    // assertion goes through PHPUnit directly.
+    Assert::assertTrue(
+        $result['status'],
+        'executeSql rejected the query: '.($result['error_msg'] ?? 'n/a'),
+    );
+
+    expect(Query::count())->toBe(1)
         ->and(Query::first()->query_code)->not->toBeEmpty();
 });
