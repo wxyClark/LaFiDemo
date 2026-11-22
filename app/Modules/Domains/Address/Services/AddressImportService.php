@@ -1,0 +1,638 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Modules\Domains\Address\Services;
+
+use App\Modules\Domains\Address\Enums\AddressLevel;
+use App\Modules\Domains\Address\Models\AddressImportLog;
+use App\Modules\Domains\Address\Models\AddressRawRecord;
+use Illuminate\Support\Facades\Http;
+
+/**
+ * 从民政部 · 中国·国家地名信息库（dmfw.mca.gov.cn）拉取行政区划并写入 addresses。
+ *
+ * 接口：GET /xzqh/getList?code=&maxLevel=N[&year=Y]
+ * 返回嵌套树，节点含 code(12位)/name/level/type/children。
+ * 注意：直辖市/不设区的市存在层级跳跃（如北京市直接挂 level=3 的市辖区），
+ * 故层级一律取节点自身 level 字段，不得按嵌套深度推断；上下级关系取自树结构。
+ *
+ * 乡镇级（level=4）：接口在省级查询不返回乡镇，需逐县级下钻（maxLevel=1）；
+ * 不设区的市（东莞/中山等，level=2 且无区县子级）需 maxLevel=2。请求间隔自适应：
+ * 从基础值开始，遇 429/错误按比例增大（从小到大试探）直到上限。
+ */
+class AddressImportService
+{
+    private int $sortCounter = 0;
+
+    private ?\CurlHandle $curl = null;
+
+    public function __construct(private readonly AddressService $addressService) {}
+
+    /**
+     * 拉取 + 记录原始数据 + 导入。
+     *
+     * @param  string|null  $level  只导入某一层级及其父链（province/city/district/township）
+     * @param  bool  $reset  重置地址表（清空后重建）；缺省按 code 增量合并、判定是否需要更新
+     * @return array{log_id:int,status:string,nodes:int,imported:int,drill:int,inserted:int,updated:int,skipped:int}
+     */
+    public function import(
+        int $maxLevel = 3,
+        ?int $year = null,
+        bool $dryRun = false,
+        ?int $delayMs = null,
+        ?int $maxDelayMs = null,
+        ?int $drillLimit = null,
+        ?callable $progress = null,
+        bool $refresh = false,
+        bool $reset = false,
+        ?string $level = null,
+    ): array {
+        $levelNum = $level === null ? null : $this->levelToNum($level);
+
+        // 根查询对"省级入口"封顶于区县（maxLevel≥4 返回与 3 相同的省市区县树），
+        // 乡镇级需逐县级下钻，故基础树固定按 3 层抓取，层级>=4 时另行 drill。
+        $log = $this->fetchAndRecord(min($maxLevel, 3), $year);
+
+        if ($log->status === 'failed') {
+            return $this->failed($log->id);
+        }
+
+        $nodes = $this->extractNodes($log->response_raw);
+        if ($nodes === null) {
+            $log->update(['status' => 'failed', 'error_message' => '无法从响应中解析行政区划节点（接口结构可能变化）']);
+
+            return $this->failed($log->id);
+        }
+
+        $rows = $this->flatten($nodes);
+        $drillRecords = [];
+        $usedDelay = $delayMs ?? (int) config('services.address.mca_delay_ms', 350);
+
+        // 仅在确实需要乡镇级时才逐县级下钻（--level=province/city/district 无需下钻）
+        $needsDrill = $levelNum === null ? ($maxLevel >= 4) : ($levelNum === 4);
+
+        if ($needsDrill) {
+            // 断点续传：已落库的成功原始响应直接复用，中断后重跑不必重复请求（--refresh 可强制刷新）
+            $cached = $refresh ? [] : $this->loadDoneRecords();
+
+            [$drillRows, $drillRecords, $usedDelay] = $this->drill(
+                $this->drillTargets($nodes, $drillLimit),
+                $year,
+                $delayMs,
+                $maxDelayMs,
+                $progress,
+                $log->id,
+                $cached,
+            );
+            $rows = array_merge($rows, $drillRows);
+        }
+
+        if ($levelNum !== null) {
+            // 保留父链：一并导入该层级及其上级，保证上下级关系完整
+            $rows = array_values(array_filter($rows, fn (array $r) => (int) $r['level_num'] <= $levelNum));
+        }
+
+        $log->update([
+            'node_count' => count($rows),
+            'drill_count' => count($drillRecords),
+            'throttle_ms' => $usedDelay,
+            'drill_raw' => $drillRecords === [] ? null : json_encode($drillRecords, JSON_UNESCAPED_UNICODE),
+        ]);
+
+        if ($dryRun) {
+            $log->update(['status' => 'success']);
+
+            return [
+                'log_id' => $log->id,
+                'status' => 'success',
+                'nodes' => count($rows),
+                'imported' => 0,
+                'drill' => count($drillRecords),
+                'inserted' => 0,
+                'updated' => 0,
+                'skipped' => 0,
+            ];
+        }
+
+        if ($reset) {
+            $imported = $this->addressService->importAddresses($rows, 'mca', replace: true);
+            $stats = [0, 0, 0];
+        } else {
+            $stats = $this->addressService->mergeAddresses($rows, 'mca');
+            $imported = array_sum($stats);
+        }
+
+        $log->update(['status' => 'success', 'imported_count' => $imported]);
+
+        return [
+            'log_id' => $log->id,
+            'status' => 'success',
+            'nodes' => count($rows),
+            'imported' => $imported,
+            'drill' => count($drillRecords),
+            'inserted' => $stats[0],
+            'updated' => $stats[1],
+            'skipped' => $stats[2],
+        ];
+    }
+
+    protected function fetchAndRecord(int $maxLevel, ?int $year): AddressImportLog
+    {
+        $params = [
+            'code' => '',
+            'maxLevel' => $maxLevel,
+            'year' => $year,
+        ];
+
+        $log = AddressImportLog::create([
+            'source' => 'mca',
+            'endpoint' => $this->url(),
+            'params' => $params,
+            'status' => 'pending',
+            'fetched_at' => now(),
+        ]);
+
+        $res = $this->fetch('', $maxLevel, $year);
+
+        $log->update([
+            'http_status' => $res['http_status'],
+            'response_raw' => $res['raw'],
+            'response_size' => strlen($res['raw']),
+        ]);
+
+        $this->recordRaw($log->id, '', $maxLevel, $year, $res);
+
+        if (! $res['success']) {
+            $log->update(['status' => 'failed', 'error_message' => $res['error']]);
+        }
+
+        return $log->fresh();
+    }
+
+    /**
+     * 下钻目标：县级(level=3) 用 maxLevel=1 得乡镇；不设区的市(level=2 无子级) 用 maxLevel=2。
+     *
+     * @param  array<int, array>  $nodes
+     * @return array<int, array{code:string,maxLevel:int,parent:string}>
+     */
+    protected function drillTargets(array $nodes, ?int $limit): array
+    {
+        $targets = [];
+
+        $walk = function (array $nodes) use (&$walk, &$targets): void {
+            foreach ($nodes as $node) {
+                if (! is_array($node)) {
+                    continue;
+                }
+
+                $code = isset($node['code']) ? (string) $node['code'] : '';
+                $level = isset($node['level']) ? (int) $node['level'] : 0;
+                if ($code === '') {
+                    continue;
+                }
+
+                if ($level === 3) {
+                    $targets[] = ['code' => $code, 'maxLevel' => 1, 'parent' => $code];
+                } elseif ($level === 2 && empty($node['children'])) {
+                    $targets[] = ['code' => $code, 'maxLevel' => 2, 'parent' => $code];
+                }
+
+                if (! empty($node['children']) && is_array($node['children'])) {
+                    $walk($node['children']);
+                }
+            }
+        };
+
+        $walk($nodes);
+
+        if ($limit !== null && $limit > 0) {
+            $targets = array_slice($targets, 0, $limit);
+        }
+
+        return $targets;
+    }
+
+    /**
+     * 逐目标下钻，自适应退避，逐次记录原始响应；已有成功原始记录的请求直接复用（断点续传）。
+     *
+     * @param  array<int, array{code:string,maxLevel:int,parent:string}>  $targets
+     * @param  (callable(int,int,int):void)|null  $progress  进度回调 (done,total,rowsSoFar)
+     * @param  array<string, array{raw:string,http_status:?int}>  $cached  key: "code#maxLevel"
+     * @return array{0:array<int,array>,1:array<int,array>,2:int}
+     */
+    protected function drill(array $targets, ?int $year, ?int $delayMs, ?int $maxDelayMs, ?callable $progress = null, int $logId = 0, array $cached = []): array
+    {
+        $delay = $delayMs ?? (int) config('services.address.mca_delay_ms', 350);
+        $maxDelay = $maxDelayMs ?? (int) config('services.address.mca_max_delay_ms', 5000);
+        $rows = [];
+        $records = [];
+        $total = count($targets);
+
+        foreach ($targets as $i => $target) {
+            $key = $target['code'].'#'.$target['maxLevel'];
+            $handled = false;
+
+            if (isset($cached[$key])) {
+                $nodes = $this->extractNodes($cached[$key]['raw']);
+                if ($nodes !== null) {
+                    foreach ($nodes as $child) {
+                        $row = $this->row($child, $target['parent']);
+                        if ($row !== null) {
+                            $rows[] = $row;
+                        }
+                    }
+
+                    $records[$i] = [
+                        'code' => $target['code'],
+                        'maxLevel' => $target['maxLevel'],
+                        'http_status' => $cached[$key]['http_status'],
+                        'node_count' => count($nodes),
+                        'error' => null,
+                        'resumed' => true,
+                    ];
+                    $handled = true;
+                }
+            }
+
+            if (! $handled) {
+                if ($i > 0 && $delay > 0) {
+                    usleep($delay * 1000);
+                }
+
+                $res = $this->fetch($target['code'], $target['maxLevel'], $year);
+
+                $record = [
+                    'code' => $target['code'],
+                    'maxLevel' => $target['maxLevel'],
+                    'http_status' => $res['http_status'],
+                    'node_count' => $res['nodes'] !== null ? count($res['nodes']) : 0,
+                    'error' => $res['error'],
+                ];
+
+                if ($res['success'] && $res['nodes'] !== null) {
+                    $record['raw'] = $res['raw'];
+
+                    foreach ($res['nodes'] as $child) {
+                        $row = $this->row($child, $target['parent']);
+                        if ($row !== null) {
+                            $rows[] = $row;
+                        }
+                    }
+
+                    // 成功：保持当前间隔（稳定）；失败：增大（从小到大试探）
+                } else {
+                    $delay = min($maxDelay, (int) round($delay * 1.5));
+                }
+
+                $records[$i] = $record;
+
+                $this->recordRaw($logId, $target['code'], $target['maxLevel'], $year, $res);
+            }
+
+            if ($progress !== null && ($i % 50 === 0 || $i === $total - 1)) {
+                $progress($i + 1, $total, count($rows));
+            }
+        }
+
+        return [$rows, array_values($records), $delay];
+    }
+
+    /**
+     * 加载已落库的成功原始响应，用于断点续传（避免中断后重复请求）。
+     *
+     * @return array<string, array{raw:string,http_status:?int}>
+     */
+    protected function loadDoneRecords(): array
+    {
+        $done = [];
+
+        AddressRawRecord::query()
+            ->where('source', 'mca')
+            ->where('status', 'success')
+            ->whereNotNull('response_raw')
+            ->get(['request_code', 'max_level', 'http_status', 'response_raw'])
+            ->each(function ($r) use (&$done) {
+                $done[$r->request_code.'#'.$r->max_level] = [
+                    'raw' => (string) $r->response_raw,
+                    'http_status' => $r->http_status,
+                ];
+            });
+
+        return $done;
+    }
+
+    /**
+     * 每次接口请求的原始记录逐条落库（address_raw_records）。
+     *
+     * @param  array{http_status:?int,raw:string,nodes:?array<int,array>,success:bool,error:?string}  $res
+     */
+    protected function recordRaw(int $logId, string $code, int $maxLevel, ?int $year, array $res): void
+    {
+        AddressRawRecord::query()->create([
+            'log_id' => $logId,
+            'source' => 'mca',
+            'request_code' => $code,
+            'max_level' => $maxLevel,
+            'year' => $year,
+            'http_status' => $res['http_status'],
+            'response_raw' => $res['raw'],
+            'response_size' => strlen($res['raw']),
+            'node_count' => $res['nodes'] !== null ? count($res['nodes']) : 0,
+            'status' => $res['success'] ? 'success' : 'failed',
+            'error_message' => $res['error'],
+            'fetched_at' => now(),
+        ]);
+    }
+
+    /**
+     * 拉取并解析，失败时重试（应对接口瞬时抖动/超时/限流）。
+     *
+     * @return array{http_status:?int,raw:string,nodes:?array<int,array>,success:bool,error:?string}
+     */
+    protected function fetch(string $code, int $maxLevel, ?int $year, int $retries = 2): array
+    {
+        $last = $this->attempt($code, $maxLevel, $year);
+
+        for ($attempt = 1; $attempt <= $retries && ! $last['success']; $attempt++) {
+            usleep(2000 * 1000 * $attempt); // 2s, 4s 递增
+            $last = $this->attempt($code, $maxLevel, $year);
+        }
+
+        return $last;
+    }
+
+    /**
+     * 复用同一 cURL 连接（keep-alive），避免每次请求重建 TLS 握手。
+     * Guzzle/Laravel Http 每次请求都新建客户端，单请求 TLS 握手可达数秒，
+     * 对 ~2800 次下钻会把耗时从 ~20 分钟拉长到 1 小时以上。
+     */
+    private function curlHandle(): \CurlHandle
+    {
+        if ($this->curl === null) {
+            $verify = (bool) config('services.address.mca_verify', true);
+            $ch = curl_init();
+            curl_setopt_array($ch, [
+                CURLOPT_RETURNTRANSFER => true,
+                CURLOPT_FOLLOWLOCATION => true,
+                CURLOPT_USERAGENT => $this->headers()['User-Agent'],
+                CURLOPT_HTTPHEADER => [
+                    'User-Agent: '.$this->headers()['User-Agent'],
+                    'Referer: '.$this->headers()['Referer'],
+                    'Accept: application/json',
+                ],
+                CURLOPT_SSL_VERIFYPEER => $verify,
+                CURLOPT_SSL_VERIFYHOST => $verify ? 2 : 0,
+            ]);
+            $this->curl = $ch;
+        }
+
+        return $this->curl;
+    }
+
+    public function __destruct()
+    {
+        if ($this->curl !== null) {
+            curl_close($this->curl);
+        }
+    }
+
+    /**
+     * @return array{http_status:?int,raw:string,nodes:?array<int,array>,success:bool,error:?string}
+     */
+    protected function attempt(string $code, int $maxLevel, ?int $year): array
+    {
+        $params = [
+            'code' => $code,
+            'maxLevel' => $maxLevel,
+            'year' => $year,
+        ];
+
+        $url = $this->url().'?'.http_build_query(array_filter($params, fn ($v) => $v !== null));
+
+        if (function_exists('curl_init')) {
+            return $this->attemptCurl($url);
+        }
+
+        return $this->attemptHttp($url);
+    }
+
+    /**
+     * @return array{http_status:?int,raw:string,nodes:?array<int,array>,success:bool,error:?string}
+     */
+    protected function attemptCurl(string $url): array
+    {
+        $ch = $this->curlHandle();
+        curl_setopt_array($ch, [
+            CURLOPT_URL => $url,
+            CURLOPT_TIMEOUT => 45,
+            CURLOPT_CONNECTTIMEOUT => 15,
+        ]);
+
+        $raw = curl_exec($ch);
+        if ($raw === false) {
+            return ['http_status' => null, 'raw' => '', 'nodes' => null, 'success' => false, 'error' => curl_error($ch)];
+        }
+
+        $status = (int) curl_getinfo($ch, CURLINFO_RESPONSE_CODE);
+        $nodes = null;
+        $error = null;
+
+        if ($status < 200 || $status >= 300) {
+            $error = 'HTTP '.$status;
+        } elseif (trim($raw) === '') {
+            $error = '响应体为空（可能被 WAF 拦截，请核对请求头）';
+        } else {
+            $nodes = $this->extractNodes($raw);
+            if ($nodes === null) {
+                $error = '无法从响应中解析行政区划节点（接口结构可能变化）';
+            }
+        }
+
+        return [
+            'http_status' => $status,
+            'raw' => (string) $raw,
+            'nodes' => $nodes,
+            'success' => $error === null,
+            'error' => $error,
+        ];
+    }
+
+    /**
+     * @return array{http_status:?int,raw:string,nodes:?array<int,array>,success:bool,error:?string}
+     */
+    protected function attemptHttp(string $url): array
+    {
+        try {
+            $response = Http::withHeaders($this->headers())
+                ->withOptions(['verify' => (bool) config('services.address.mca_verify', true)])
+                ->get($url);
+
+            $raw = $response->body();
+            $nodes = null;
+            $error = null;
+
+            if (! $response->successful()) {
+                $error = 'HTTP '.$response->status();
+            } elseif (trim($raw) === '') {
+                $error = '响应体为空（可能被 WAF 拦截，请核对请求头）';
+            } else {
+                $nodes = $this->extractNodes($raw);
+                if ($nodes === null) {
+                    $error = '无法从响应中解析行政区划节点（接口结构可能变化）';
+                }
+            }
+
+            return [
+                'http_status' => $response->status(),
+                'raw' => $raw,
+                'nodes' => $nodes,
+                'success' => $error === null,
+                'error' => $error,
+            ];
+        } catch (\Throwable $e) {
+            return ['http_status' => null, 'raw' => '', 'nodes' => null, 'success' => false, 'error' => $e->getMessage()];
+        }
+    }
+
+    protected function url(): string
+    {
+        $base = (string) config('services.address.mca_base_url');
+        $endpoint = (string) config('services.address.mca_xzqh_endpoint');
+
+        return rtrim($base, '/').'/'.ltrim($endpoint, '/');
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    protected function headers(): array
+    {
+        return [
+            'Referer' => 'https://dmfw.mca.gov.cn/',
+            'User-Agent' => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+            'Accept' => 'application/json',
+        ];
+    }
+
+    /**
+     * 从原始响应中提取行政区划节点数组，兼容多种返回形状。
+     *
+     * @return array<int, array>|null
+     */
+    protected function extractNodes(?string $raw): ?array
+    {
+        if ($raw === null || trim($raw) === '') {
+            return null;
+        }
+
+        $decoded = json_decode($raw, true);
+        if (! is_array($decoded)) {
+            return null;
+        }
+
+        foreach ([['data', 'children'], ['response', 'data', 'children'], ['data'], ['children']] as $path) {
+            $node = $decoded;
+            $ok = true;
+            foreach ($path as $key) {
+                if (! is_array($node) || ! array_key_exists($key, $node)) {
+                    $ok = false;
+                    break;
+                }
+                $node = $node[$key];
+            }
+            if ($ok && is_array($node)) {
+                return $node;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * 将嵌套树拍平为 importAddresses 所需行（编号/名称/层级/上下级）。
+     *
+     * @param  array<int, array>  $nodes
+     * @return array<int, array{parent_code:?string,code:string,name:string,level:string,level_num:int,sort:int}>
+     */
+    protected function flatten(array $nodes, ?string $parentCode = null): array
+    {
+        $rows = [];
+
+        foreach ($nodes as $node) {
+            $row = $this->row($node, $parentCode);
+            if ($row === null) {
+                continue;
+            }
+
+            $rows[] = $row;
+
+            if (! empty($node['children']) && is_array($node['children'])) {
+                $rows = array_merge($rows, $this->flatten($node['children'], $row['code']));
+            }
+        }
+
+        return $rows;
+    }
+
+    /**
+     * @return array{parent_code:?string,code:string,name:string,level:string,level_num:int,sort:int}|null
+     */
+    protected function row(array $node, ?string $parentCode): ?array
+    {
+        $code = isset($node['code']) ? (string) $node['code'] : '';
+        $name = isset($node['name']) ? (string) $node['name'] : '';
+        if ($code === '' || $name === '') {
+            return null;
+        }
+
+        $levelNum = isset($node['level']) ? (int) $node['level'] : 1;
+
+        return [
+            'parent_code' => $parentCode,
+            'code' => $code,
+            'name' => $name,
+            'level' => $this->levelLabel($levelNum),
+            'level_num' => $levelNum,
+            'sort' => $this->sortCounter++,
+        ];
+    }
+
+    protected function levelLabel(int $levelNum): string
+    {
+        return match ($levelNum) {
+            1 => AddressLevel::PROVINCE->value,
+            2 => AddressLevel::CITY->value,
+            3 => AddressLevel::DISTRICT->value,
+            default => AddressLevel::TOWNSHIP->value,
+        };
+    }
+
+    protected function levelToNum(string $level): int
+    {
+        return match (AddressLevel::from($level)) {
+            AddressLevel::PROVINCE => 1,
+            AddressLevel::CITY => 2,
+            AddressLevel::DISTRICT => 3,
+            AddressLevel::TOWNSHIP => 4,
+            default => 1,
+        };
+    }
+
+    /**
+     * @return array{log_id:int,status:string,nodes:int,imported:int,drill:int,inserted:int,updated:int,skipped:int}
+     */
+    protected function failed(int $logId): array
+    {
+        return [
+            'log_id' => $logId,
+            'status' => 'failed',
+            'nodes' => 0,
+            'imported' => 0,
+            'drill' => 0,
+            'inserted' => 0,
+            'updated' => 0,
+            'skipped' => 0,
+        ];
+    }
+}

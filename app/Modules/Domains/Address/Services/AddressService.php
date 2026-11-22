@@ -111,59 +111,193 @@ class AddressService
         });
     }
 
-    public function importAddresses(array $data, string $source = 'pcas-file'): int
+    /**
+     * 导入地址数据。
+     *
+     * @param  array<int, array<string, mixed>>  $data
+     * @param  bool  $replace  true=清空全表重建；false=按 code 增量合并（已存在则判断是否需要更新）
+     */
+    public function importAddresses(array $data, string $source = 'pcas-file', bool $replace = true): int
+    {
+        if ($replace) {
+            return $this->replaceImport($data, $source);
+        }
+
+        [$inserted, $updated, $skipped] = $this->mergeImport($data, $source);
+
+        return $inserted + $updated + $skipped;
+    }
+
+    /**
+     * 增量合并并返回统计。
+     *
+     * @param  array<int, array<string, mixed>>  $data
+     * @return array{0:int,1:int,2:int} [新增, 更新, 已存在无需更新]
+     */
+    public function mergeAddresses(array $data, string $source = 'pcas-file'): array
+    {
+        return $this->mergeImport($data, $source);
+    }
+
+    /**
+     * 清空全表后重建（整体替换）。
+     *
+     * @param  array<int, array<string, mixed>>  $data
+     */
+    protected function replaceImport(array $data, string $source): int
     {
         Address::query()->withTrashed()->forceDelete();
         $this->clearCache();
 
-        // 按 level_num 排序导入，先构建 parent_code -> id 映射
-        $sorted = collect($data)->sortBy('level_num')->values();
+        // 按层级分组导入（父级 level_num 恒小于子级），保证插入子级时其父级 code -> id 已就绪，
+        // 避免同一分块内父子互相引用导致 parent_id 丢失。
+        $byLevel = collect($data)->groupBy('level_num')->sortKeys();
         $codeToId = [];
         $count = 0;
 
-        $sorted->chunk(1000)->each(function ($chunk) use (&$codeToId, &$count, $source) {
-            $codes = $chunk->pluck('code')->toArray();
-            $rows = [];
+        foreach ($byLevel as $levelRows) {
+            foreach ($levelRows->chunk(1000) as $chunk) {
+                $codes = $chunk->pluck('code')->toArray();
+                $rows = [];
 
-            foreach ($chunk as $item) {
-                $parentId = null;
-                if (! empty($item['parent_code']) && isset($codeToId[$item['parent_code']])) {
-                    $parentId = $codeToId[$item['parent_code']];
+                foreach ($chunk as $item) {
+                    $parentId = null;
+                    if (! empty($item['parent_code']) && isset($codeToId[$item['parent_code']])) {
+                        $parentId = $codeToId[$item['parent_code']];
+                    }
+
+                    $rows[] = [
+                        'parent_id' => $parentId,
+                        'name' => $item['name'],
+                        'code' => $item['code'],
+                        'area_code' => CanonicalCode::normalize($item['code'], $item['level_num']),
+                        'level' => $item['level'],
+                        'level_num' => $item['level_num'],
+                        'pinyin' => $item['pinyin'] ?? null,
+                        'merge_path' => isset($item['merge_path']) ? json_encode($item['merge_path']) : null,
+                        'sort' => $item['sort'] ?? 0,
+                        'source' => $source,
+                        'synced_at' => now(),
+                        'created_at' => now(),
+                        'updated_at' => now(),
+                    ];
                 }
 
-                $rows[] = [
-                    'parent_id' => $parentId,
-                    'name' => $item['name'],
-                    'code' => $item['code'],
-                    'area_code' => CanonicalCode::normalize($item['code'], $item['level_num']),
-                    'level' => $item['level'],
-                    'level_num' => $item['level_num'],
-                    'pinyin' => $item['pinyin'] ?? null,
-                    'merge_path' => isset($item['merge_path']) ? json_encode($item['merge_path']) : null,
-                    'sort' => $item['sort'] ?? 0,
-                    'source' => $source,
-                    'synced_at' => now(),
-                    'created_at' => now(),
-                    'updated_at' => now(),
-                ];
+                DB::table((new Address)->getTable())->insert($rows);
+
+                // 查询本批次插入的 id，回填 code -> id 映射
+                $inserted = DB::table((new Address)->getTable())
+                    ->whereIn('code', $codes)
+                    ->pluck('id', 'code')
+                    ->toArray();
+
+                foreach ($inserted as $code => $id) {
+                    $codeToId[$code] = $id;
+                }
+
+                $count += count($rows);
             }
-
-            DB::table((new Address)->getTable())->insert($rows);
-
-            // 查询本批次插入的 id，回填 code -> id 映射
-            $inserted = DB::table((new Address)->getTable())
-                ->whereIn('code', $codes)
-                ->pluck('id', 'code')
-                ->toArray();
-
-            foreach ($inserted as $code => $id) {
-                $codeToId[$code] = $id;
-            }
-
-            $count += count($rows);
-        });
+        }
 
         return $count;
+    }
+
+    /**
+     * 增量合并：按 code 判定是否已存在，存在则比较关键字段决定是否需要更新，不存在则插入。
+     *
+     * @param  array<int, array<string, mixed>>  $data
+     * @return array{0:int,1:int,2:int} [新增, 更新, 已存在无需更新]
+     */
+    protected function mergeImport(array $data, string $source): array
+    {
+        $this->clearCache();
+
+        $table = (new Address)->getTable();
+        $existing = Address::query()
+            ->select(['id', 'code', 'parent_id', 'name', 'level', 'level_num', 'source'])
+            ->get()
+            ->keyBy('code');
+
+        $codeToId = [];
+        foreach ($existing as $code => $row) {
+            $codeToId[$code] = $row->id;
+        }
+
+        // 按层级分组，父级先处理，保证子级能解析到 parent_id
+        $byLevel = collect($data)->groupBy('level_num')->sortKeys();
+        $inserted = 0;
+        $updated = 0;
+        $skipped = 0;
+
+        foreach ($byLevel as $levelRows) {
+            foreach ($levelRows->chunk(1000) as $chunk) {
+                $insertRows = [];
+                $updateRows = [];
+
+                foreach ($chunk as $item) {
+                    $parentId = null;
+                    $parentCode = $item['parent_code'] ?? null;
+                    if (! empty($parentCode) && isset($codeToId[$parentCode])) {
+                        $parentId = $codeToId[$parentCode];
+                    }
+
+                    $attrs = [
+                        'parent_id' => $parentId,
+                        'name' => $item['name'],
+                        'code' => $item['code'],
+                        'area_code' => CanonicalCode::normalize($item['code'], $item['level_num']),
+                        'level' => $item['level'],
+                        'level_num' => $item['level_num'],
+                        'pinyin' => $item['pinyin'] ?? null,
+                        'merge_path' => isset($item['merge_path']) ? json_encode($item['merge_path']) : null,
+                        'sort' => $item['sort'] ?? 0,
+                        'source' => $source,
+                        'synced_at' => now(),
+                    ];
+
+                    $row = $existing->get($item['code']);
+                    if ($row === null) {
+                        $insertRows[] = $attrs + ['created_at' => now(), 'updated_at' => now()];
+
+                        continue;
+                    }
+
+                    $codeToId[$item['code']] = $row->id;
+
+                    $changed = $row->name !== $attrs['name']
+                        || $row->level !== $attrs['level']
+                        || (int) $row->level_num !== (int) $attrs['level_num']
+                        || (string) $row->source !== (string) $attrs['source']
+                        || (int) $row->parent_id !== (int) ($parentId ?? 0);
+
+                    if ($changed) {
+                        $updateRows[] = ['id' => $row->id] + $attrs + ['updated_at' => now()];
+                    } else {
+                        $skipped++;
+                    }
+                }
+
+                if ($insertRows !== []) {
+                    DB::table($table)->insert($insertRows);
+
+                    DB::table($table)
+                        ->whereIn('code', array_column($insertRows, 'code'))
+                        ->pluck('id', 'code')
+                        ->each(function ($id, $code) use (&$codeToId) {
+                            $codeToId[$code] = $id;
+                        });
+
+                    $inserted += count($insertRows);
+                }
+
+                foreach ($updateRows as $u) {
+                    DB::table($table)->where('id', $u['id'])->update($u);
+                    $updated++;
+                }
+            }
+        }
+
+        return [$inserted, $updated, $skipped];
     }
 
     public function clearCache(): void
