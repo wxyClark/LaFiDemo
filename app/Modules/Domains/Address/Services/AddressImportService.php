@@ -32,7 +32,9 @@ class AddressImportService
     /**
      * 拉取 + 记录原始数据 + 导入。
      *
-     * @return array{log_id:int,status:string,nodes:int,imported:int,drill:int}
+     * @param  string|null  $level  只导入某一层级及其父链（province/city/district/township）
+     * @param  bool  $reset  重置地址表（清空后重建）；缺省按 code 增量合并、判定是否需要更新
+     * @return array{log_id:int,status:string,nodes:int,imported:int,drill:int,inserted:int,updated:int,skipped:int}
      */
     public function import(
         int $maxLevel = 3,
@@ -43,7 +45,11 @@ class AddressImportService
         ?int $drillLimit = null,
         ?callable $progress = null,
         bool $refresh = false,
+        bool $reset = false,
+        ?string $level = null,
     ): array {
+        $levelNum = $level === null ? null : $this->levelToNum($level);
+
         // 根查询对"省级入口"封顶于区县（maxLevel≥4 返回与 3 相同的省市区县树），
         // 乡镇级需逐县级下钻，故基础树固定按 3 层抓取，层级>=4 时另行 drill。
         $log = $this->fetchAndRecord(min($maxLevel, 3), $year);
@@ -63,7 +69,10 @@ class AddressImportService
         $drillRecords = [];
         $usedDelay = $delayMs ?? (int) config('services.address.mca_delay_ms', 350);
 
-        if ($maxLevel >= 4) {
+        // 仅在确实需要乡镇级时才逐县级下钻（--level=province/city/district 无需下钻）
+        $needsDrill = $levelNum === null ? ($maxLevel >= 4) : ($levelNum === 4);
+
+        if ($needsDrill) {
             // 断点续传：已落库的成功原始响应直接复用，中断后重跑不必重复请求（--refresh 可强制刷新）
             $cached = $refresh ? [] : $this->loadDoneRecords();
 
@@ -79,6 +88,11 @@ class AddressImportService
             $rows = array_merge($rows, $drillRows);
         }
 
+        if ($levelNum !== null) {
+            // 保留父链：一并导入该层级及其上级，保证上下级关系完整
+            $rows = array_values(array_filter($rows, fn (array $r) => (int) $r['level_num'] <= $levelNum));
+        }
+
         $log->update([
             'node_count' => count($rows),
             'drill_count' => count($drillRecords),
@@ -89,13 +103,38 @@ class AddressImportService
         if ($dryRun) {
             $log->update(['status' => 'success']);
 
-            return ['log_id' => $log->id, 'status' => 'success', 'nodes' => count($rows), 'imported' => 0, 'drill' => count($drillRecords)];
+            return [
+                'log_id' => $log->id,
+                'status' => 'success',
+                'nodes' => count($rows),
+                'imported' => 0,
+                'drill' => count($drillRecords),
+                'inserted' => 0,
+                'updated' => 0,
+                'skipped' => 0,
+            ];
         }
 
-        $imported = $this->addressService->importAddresses($rows, 'mca');
+        if ($reset) {
+            $imported = $this->addressService->importAddresses($rows, 'mca', replace: true);
+            $stats = [0, 0, 0];
+        } else {
+            $stats = $this->addressService->mergeAddresses($rows, 'mca');
+            $imported = array_sum($stats);
+        }
+
         $log->update(['status' => 'success', 'imported_count' => $imported]);
 
-        return ['log_id' => $log->id, 'status' => 'success', 'nodes' => count($rows), 'imported' => $imported, 'drill' => count($drillRecords)];
+        return [
+            'log_id' => $log->id,
+            'status' => 'success',
+            'nodes' => count($rows),
+            'imported' => $imported,
+            'drill' => count($drillRecords),
+            'inserted' => $stats[0],
+            'updated' => $stats[1],
+            'skipped' => $stats[2],
+        ];
     }
 
     protected function fetchAndRecord(int $maxLevel, ?int $year): AddressImportLog
@@ -569,11 +608,31 @@ class AddressImportService
         };
     }
 
+    protected function levelToNum(string $level): int
+    {
+        return match (AddressLevel::from($level)) {
+            AddressLevel::PROVINCE => 1,
+            AddressLevel::CITY => 2,
+            AddressLevel::DISTRICT => 3,
+            AddressLevel::TOWNSHIP => 4,
+            default => 1,
+        };
+    }
+
     /**
-     * @return array{log_id:int,status:string,nodes:int,imported:int,drill:int}
+     * @return array{log_id:int,status:string,nodes:int,imported:int,drill:int,inserted:int,updated:int,skipped:int}
      */
     protected function failed(int $logId): array
     {
-        return ['log_id' => $logId, 'status' => 'failed', 'nodes' => 0, 'imported' => 0, 'drill' => 0];
+        return [
+            'log_id' => $logId,
+            'status' => 'failed',
+            'nodes' => 0,
+            'imported' => 0,
+            'drill' => 0,
+            'inserted' => 0,
+            'updated' => 0,
+            'skipped' => 0,
+        ];
     }
 }
