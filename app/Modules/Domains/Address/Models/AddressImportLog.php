@@ -21,6 +21,8 @@ class AddressImportLog extends Model
         'response_size' => 'integer',
         'node_count' => 'integer',
         'imported_count' => 'integer',
+        'drill_count' => 'integer',
+        'throttle_ms' => 'integer',
         'fetched_at' => 'datetime',
     ];
 }
