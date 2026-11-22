@@ -116,52 +116,55 @@ class AddressService
         Address::query()->withTrashed()->forceDelete();
         $this->clearCache();
 
-        // 按 level_num 排序导入，先构建 parent_code -> id 映射
-        $sorted = collect($data)->sortBy('level_num')->values();
+        // 按层级分组导入（父级 level_num 恒小于子级），保证插入子级时其父级 code -> id 已就绪，
+        // 避免同一分块内父子互相引用导致 parent_id 丢失。
+        $byLevel = collect($data)->groupBy('level_num')->sortKeys();
         $codeToId = [];
         $count = 0;
 
-        $sorted->chunk(1000)->each(function ($chunk) use (&$codeToId, &$count, $source) {
-            $codes = $chunk->pluck('code')->toArray();
-            $rows = [];
+        foreach ($byLevel as $levelRows) {
+            foreach ($levelRows->chunk(1000) as $chunk) {
+                $codes = $chunk->pluck('code')->toArray();
+                $rows = [];
 
-            foreach ($chunk as $item) {
-                $parentId = null;
-                if (! empty($item['parent_code']) && isset($codeToId[$item['parent_code']])) {
-                    $parentId = $codeToId[$item['parent_code']];
+                foreach ($chunk as $item) {
+                    $parentId = null;
+                    if (! empty($item['parent_code']) && isset($codeToId[$item['parent_code']])) {
+                        $parentId = $codeToId[$item['parent_code']];
+                    }
+
+                    $rows[] = [
+                        'parent_id' => $parentId,
+                        'name' => $item['name'],
+                        'code' => $item['code'],
+                        'area_code' => CanonicalCode::normalize($item['code'], $item['level_num']),
+                        'level' => $item['level'],
+                        'level_num' => $item['level_num'],
+                        'pinyin' => $item['pinyin'] ?? null,
+                        'merge_path' => isset($item['merge_path']) ? json_encode($item['merge_path']) : null,
+                        'sort' => $item['sort'] ?? 0,
+                        'source' => $source,
+                        'synced_at' => now(),
+                        'created_at' => now(),
+                        'updated_at' => now(),
+                    ];
                 }
 
-                $rows[] = [
-                    'parent_id' => $parentId,
-                    'name' => $item['name'],
-                    'code' => $item['code'],
-                    'area_code' => CanonicalCode::normalize($item['code'], $item['level_num']),
-                    'level' => $item['level'],
-                    'level_num' => $item['level_num'],
-                    'pinyin' => $item['pinyin'] ?? null,
-                    'merge_path' => isset($item['merge_path']) ? json_encode($item['merge_path']) : null,
-                    'sort' => $item['sort'] ?? 0,
-                    'source' => $source,
-                    'synced_at' => now(),
-                    'created_at' => now(),
-                    'updated_at' => now(),
-                ];
+                DB::table((new Address)->getTable())->insert($rows);
+
+                // 查询本批次插入的 id，回填 code -> id 映射
+                $inserted = DB::table((new Address)->getTable())
+                    ->whereIn('code', $codes)
+                    ->pluck('id', 'code')
+                    ->toArray();
+
+                foreach ($inserted as $code => $id) {
+                    $codeToId[$code] = $id;
+                }
+
+                $count += count($rows);
             }
-
-            DB::table((new Address)->getTable())->insert($rows);
-
-            // 查询本批次插入的 id，回填 code -> id 映射
-            $inserted = DB::table((new Address)->getTable())
-                ->whereIn('code', $codes)
-                ->pluck('id', 'code')
-                ->toArray();
-
-            foreach ($inserted as $code => $id) {
-                $codeToId[$code] = $id;
-            }
-
-            $count += count($rows);
-        });
+        }
 
         return $count;
     }

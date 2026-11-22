@@ -39,6 +39,12 @@ return [
         'amap_key' => env('AMAP_KEY', ''),
         'amap_base_url' => env('ADDRESS_API_BASE_URL', 'https://restapi.amap.com'),
         'import_base_url' => env('ADDRESS_IMPORT_BASE_URL'),
+        // 民政部 · 中国·国家地名信息库（dmfw.mca.gov.cn）行政区划接口
+        'mca_base_url' => env('ADDRESS_MCA_BASE_URL', 'https://dmfw.mca.gov.cn/9095'),
+        'mca_xzqh_endpoint' => env('ADDRESS_MCA_XZQH_ENDPOINT', '/xzqh/getList'),
+        // PHP 默认无 CA（curl.cainfo 为空），且部分环境存在 SSL 拦截/自签名中间证书，
+        // 无法校验证书链时置 ADDRESS_MCA_VERIFY=false（仅读取公开行政区划数据，非敏感）。
+        'mca_verify' => filter_var(env('ADDRESS_MCA_VERIFY', true), FILTER_VALIDATE_BOOLEAN),
     ],
 
     'filament_admin' => [
