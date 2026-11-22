@@ -36,7 +36,9 @@ class ImportAddressesCommand extends Command
         $maxDelayMs = $this->option('throttle-max-ms') ? (int) $this->option('throttle-max-ms') : null;
         $drillLimit = $this->option('drill-limit') ? (int) $this->option('drill-limit') : null;
 
-        $result = $service->import($maxLevel, $year, $dryRun, $delayMs, $maxDelayMs, $drillLimit);
+        $result = $service->import($maxLevel, $year, $dryRun, $delayMs, $maxDelayMs, $drillLimit, function (int $done, int $total, int $rowsSoFar) {
+            $this->line(sprintf('  下钻进度 %d/%d（%d%%）  累计乡镇节点 %d', $done, $total, $total > 0 ? (int) round($done / $total * 100) : 0, $rowsSoFar));
+        });
 
         $msg = sprintf(
             '日志ID: %d  状态: %s  解析节点: %d  写入 addresses: %d',

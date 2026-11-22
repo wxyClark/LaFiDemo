@@ -24,6 +24,8 @@ class AddressImportService
 {
     private int $sortCounter = 0;
 
+    private ?\CurlHandle $curl = null;
+
     public function __construct(private readonly AddressService $addressService) {}
 
     /**
@@ -38,6 +40,7 @@ class AddressImportService
         ?int $delayMs = null,
         ?int $maxDelayMs = null,
         ?int $drillLimit = null,
+        ?callable $progress = null,
     ): array {
         // 根查询对"省级入口"封顶于区县（maxLevel≥4 返回与 3 相同的省市区县树），
         // 乡镇级需逐县级下钻，故基础树固定按 3 层抓取，层级>=4 时另行 drill。
@@ -64,6 +67,7 @@ class AddressImportService
                 $year,
                 $delayMs,
                 $maxDelayMs,
+                $progress,
             );
             $rows = array_merge($rows, $drillRows);
         }
@@ -165,14 +169,16 @@ class AddressImportService
      * 逐目标下钻，自适应退避，逐次记录原始响应。
      *
      * @param  array<int, array{code:string,maxLevel:int,parent:string}>  $targets
+     * @param  (callable(int,int,int):void)|null  $progress  进度回调 (done,total,rowsSoFar)
      * @return array{0:array<int,array>,1:array<int,array>,2:int}
      */
-    protected function drill(array $targets, ?int $year, ?int $delayMs, ?int $maxDelayMs): array
+    protected function drill(array $targets, ?int $year, ?int $delayMs, ?int $maxDelayMs, ?callable $progress = null): array
     {
         $delay = $delayMs ?? (int) config('services.address.mca_delay_ms', 350);
         $maxDelay = $maxDelayMs ?? (int) config('services.address.mca_max_delay_ms', 5000);
         $rows = [];
         $records = [];
+        $total = count($targets);
 
         foreach ($targets as $i => $target) {
             if ($i > 0 && $delay > 0) {
@@ -205,15 +211,71 @@ class AddressImportService
             }
 
             $records[] = $record;
+
+            if ($progress !== null && ($i % 50 === 0 || $i === $total - 1)) {
+                $progress($i + 1, $total, count($rows));
+            }
         }
 
         return [$rows, $records, $delay];
     }
 
     /**
+     * 拉取并解析，失败时重试（应对接口瞬时抖动/超时/限流）。
+     *
      * @return array{http_status:?int,raw:string,nodes:?array<int,array>,success:bool,error:?string}
      */
-    protected function fetch(string $code, int $maxLevel, ?int $year): array
+    protected function fetch(string $code, int $maxLevel, ?int $year, int $retries = 2): array
+    {
+        $last = $this->attempt($code, $maxLevel, $year);
+
+        for ($attempt = 1; $attempt <= $retries && ! $last['success']; $attempt++) {
+            usleep(2000 * 1000 * $attempt); // 2s, 4s 递增
+            $last = $this->attempt($code, $maxLevel, $year);
+        }
+
+        return $last;
+    }
+
+    /**
+     * 复用同一 cURL 连接（keep-alive），避免每次请求重建 TLS 握手。
+     * Guzzle/Laravel Http 每次请求都新建客户端，单请求 TLS 握手可达数秒，
+     * 对 ~2800 次下钻会把耗时从 ~20 分钟拉长到 1 小时以上。
+     */
+    private function curlHandle(): \CurlHandle
+    {
+        if ($this->curl === null) {
+            $verify = (bool) config('services.address.mca_verify', true);
+            $ch = curl_init();
+            curl_setopt_array($ch, [
+                CURLOPT_RETURNTRANSFER => true,
+                CURLOPT_FOLLOWLOCATION => true,
+                CURLOPT_USERAGENT => $this->headers()['User-Agent'],
+                CURLOPT_HTTPHEADER => [
+                    'User-Agent: '.$this->headers()['User-Agent'],
+                    'Referer: '.$this->headers()['Referer'],
+                    'Accept: application/json',
+                ],
+                CURLOPT_SSL_VERIFYPEER => $verify,
+                CURLOPT_SSL_VERIFYHOST => $verify ? 2 : 0,
+            ]);
+            $this->curl = $ch;
+        }
+
+        return $this->curl;
+    }
+
+    public function __destruct()
+    {
+        if ($this->curl !== null) {
+            curl_close($this->curl);
+        }
+    }
+
+    /**
+     * @return array{http_status:?int,raw:string,nodes:?array<int,array>,success:bool,error:?string}
+     */
+    protected function attempt(string $code, int $maxLevel, ?int $year): array
     {
         $params = [
             'code' => $code,
@@ -221,10 +283,65 @@ class AddressImportService
             'year' => $year,
         ];
 
+        $url = $this->url().'?'.http_build_query(array_filter($params, fn ($v) => $v !== null));
+
+        if (function_exists('curl_init')) {
+            return $this->attemptCurl($url);
+        }
+
+        return $this->attemptHttp($url);
+    }
+
+    /**
+     * @return array{http_status:?int,raw:string,nodes:?array<int,array>,success:bool,error:?string}
+     */
+    protected function attemptCurl(string $url): array
+    {
+        $ch = $this->curlHandle();
+        curl_setopt_array($ch, [
+            CURLOPT_URL => $url,
+            CURLOPT_TIMEOUT => 45,
+            CURLOPT_CONNECTTIMEOUT => 15,
+        ]);
+
+        $raw = curl_exec($ch);
+        if ($raw === false) {
+            return ['http_status' => null, 'raw' => '', 'nodes' => null, 'success' => false, 'error' => curl_error($ch)];
+        }
+
+        $status = (int) curl_getinfo($ch, CURLINFO_RESPONSE_CODE);
+        $nodes = null;
+        $error = null;
+
+        if ($status < 200 || $status >= 300) {
+            $error = 'HTTP '.$status;
+        } elseif (trim($raw) === '') {
+            $error = '响应体为空（可能被 WAF 拦截，请核对请求头）';
+        } else {
+            $nodes = $this->extractNodes($raw);
+            if ($nodes === null) {
+                $error = '无法从响应中解析行政区划节点（接口结构可能变化）';
+            }
+        }
+
+        return [
+            'http_status' => $status,
+            'raw' => (string) $raw,
+            'nodes' => $nodes,
+            'success' => $error === null,
+            'error' => $error,
+        ];
+    }
+
+    /**
+     * @return array{http_status:?int,raw:string,nodes:?array<int,array>,success:bool,error:?string}
+     */
+    protected function attemptHttp(string $url): array
+    {
         try {
             $response = Http::withHeaders($this->headers())
                 ->withOptions(['verify' => (bool) config('services.address.mca_verify', true)])
-                ->get($this->url(), array_filter($params, fn ($v) => $v !== null));
+                ->get($url);
 
             $raw = $response->body();
             $nodes = null;
