@@ -42,6 +42,7 @@ class AddressImportService
         ?int $maxDelayMs = null,
         ?int $drillLimit = null,
         ?callable $progress = null,
+        bool $refresh = false,
     ): array {
         // 根查询对"省级入口"封顶于区县（maxLevel≥4 返回与 3 相同的省市区县树），
         // 乡镇级需逐县级下钻，故基础树固定按 3 层抓取，层级>=4 时另行 drill。
@@ -63,6 +64,9 @@ class AddressImportService
         $usedDelay = $delayMs ?? (int) config('services.address.mca_delay_ms', 350);
 
         if ($maxLevel >= 4) {
+            // 断点续传：已落库的成功原始响应直接复用，中断后重跑不必重复请求（--refresh 可强制刷新）
+            $cached = $refresh ? [] : $this->loadDoneRecords();
+
             [$drillRows, $drillRecords, $usedDelay] = $this->drill(
                 $this->drillTargets($nodes, $drillLimit),
                 $year,
@@ -70,6 +74,7 @@ class AddressImportService
                 $maxDelayMs,
                 $progress,
                 $log->id,
+                $cached,
             );
             $rows = array_merge($rows, $drillRows);
         }
@@ -170,13 +175,14 @@ class AddressImportService
     }
 
     /**
-     * 逐目标下钻，自适应退避，逐次记录原始响应。
+     * 逐目标下钻，自适应退避，逐次记录原始响应；已有成功原始记录的请求直接复用（断点续传）。
      *
      * @param  array<int, array{code:string,maxLevel:int,parent:string}>  $targets
      * @param  (callable(int,int,int):void)|null  $progress  进度回调 (done,total,rowsSoFar)
+     * @param  array<string, array{raw:string,http_status:?int}>  $cached  key: "code#maxLevel"
      * @return array{0:array<int,array>,1:array<int,array>,2:int}
      */
-    protected function drill(array $targets, ?int $year, ?int $delayMs, ?int $maxDelayMs, ?callable $progress = null, int $logId = 0): array
+    protected function drill(array $targets, ?int $year, ?int $delayMs, ?int $maxDelayMs, ?callable $progress = null, int $logId = 0, array $cached = []): array
     {
         $delay = $delayMs ?? (int) config('services.address.mca_delay_ms', 350);
         $maxDelay = $maxDelayMs ?? (int) config('services.address.mca_max_delay_ms', 5000);
@@ -185,45 +191,96 @@ class AddressImportService
         $total = count($targets);
 
         foreach ($targets as $i => $target) {
-            if ($i > 0 && $delay > 0) {
-                usleep($delay * 1000);
+            $key = $target['code'].'#'.$target['maxLevel'];
+            $handled = false;
+
+            if (isset($cached[$key])) {
+                $nodes = $this->extractNodes($cached[$key]['raw']);
+                if ($nodes !== null) {
+                    foreach ($nodes as $child) {
+                        $row = $this->row($child, $target['parent']);
+                        if ($row !== null) {
+                            $rows[] = $row;
+                        }
+                    }
+
+                    $records[$i] = [
+                        'code' => $target['code'],
+                        'maxLevel' => $target['maxLevel'],
+                        'http_status' => $cached[$key]['http_status'],
+                        'node_count' => count($nodes),
+                        'error' => null,
+                        'resumed' => true,
+                    ];
+                    $handled = true;
+                }
             }
 
-            $res = $this->fetch($target['code'], $target['maxLevel'], $year);
-
-            $record = [
-                'code' => $target['code'],
-                'maxLevel' => $target['maxLevel'],
-                'http_status' => $res['http_status'],
-                'node_count' => $res['nodes'] !== null ? count($res['nodes']) : 0,
-                'error' => $res['error'],
-            ];
-
-            if ($res['success'] && $res['nodes'] !== null) {
-                $record['raw'] = $res['raw'];
-
-                foreach ($res['nodes'] as $child) {
-                    $row = $this->row($child, $target['parent']);
-                    if ($row !== null) {
-                        $rows[] = $row;
-                    }
+            if (! $handled) {
+                if ($i > 0 && $delay > 0) {
+                    usleep($delay * 1000);
                 }
 
-                // 成功：保持当前间隔（稳定）；失败：增大（从小到大试探）
-            } else {
-                $delay = min($maxDelay, (int) round($delay * 1.5));
+                $res = $this->fetch($target['code'], $target['maxLevel'], $year);
+
+                $record = [
+                    'code' => $target['code'],
+                    'maxLevel' => $target['maxLevel'],
+                    'http_status' => $res['http_status'],
+                    'node_count' => $res['nodes'] !== null ? count($res['nodes']) : 0,
+                    'error' => $res['error'],
+                ];
+
+                if ($res['success'] && $res['nodes'] !== null) {
+                    $record['raw'] = $res['raw'];
+
+                    foreach ($res['nodes'] as $child) {
+                        $row = $this->row($child, $target['parent']);
+                        if ($row !== null) {
+                            $rows[] = $row;
+                        }
+                    }
+
+                    // 成功：保持当前间隔（稳定）；失败：增大（从小到大试探）
+                } else {
+                    $delay = min($maxDelay, (int) round($delay * 1.5));
+                }
+
+                $records[$i] = $record;
+
+                $this->recordRaw($logId, $target['code'], $target['maxLevel'], $year, $res);
             }
-
-            $records[] = $record;
-
-            $this->recordRaw($logId, $target['code'], $target['maxLevel'], $year, $res);
 
             if ($progress !== null && ($i % 50 === 0 || $i === $total - 1)) {
                 $progress($i + 1, $total, count($rows));
             }
         }
 
-        return [$rows, $records, $delay];
+        return [$rows, array_values($records), $delay];
+    }
+
+    /**
+     * 加载已落库的成功原始响应，用于断点续传（避免中断后重复请求）。
+     *
+     * @return array<string, array{raw:string,http_status:?int}>
+     */
+    protected function loadDoneRecords(): array
+    {
+        $done = [];
+
+        AddressRawRecord::query()
+            ->where('source', 'mca')
+            ->where('status', 'success')
+            ->whereNotNull('response_raw')
+            ->get(['request_code', 'max_level', 'http_status', 'response_raw'])
+            ->each(function ($r) use (&$done) {
+                $done[$r->request_code.'#'.$r->max_level] = [
+                    'raw' => (string) $r->response_raw,
+                    'http_status' => $r->http_status,
+                ];
+            });
+
+        return $done;
     }
 
     /**
