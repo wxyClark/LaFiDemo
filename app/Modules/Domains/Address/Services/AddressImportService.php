@@ -6,6 +6,7 @@ namespace App\Modules\Domains\Address\Services;
 
 use App\Modules\Domains\Address\Enums\AddressLevel;
 use App\Modules\Domains\Address\Models\AddressImportLog;
+use App\Modules\Domains\Address\Models\AddressRawRecord;
 use Illuminate\Support\Facades\Http;
 
 /**
@@ -68,6 +69,7 @@ class AddressImportService
                 $delayMs,
                 $maxDelayMs,
                 $progress,
+                $log->id,
             );
             $rows = array_merge($rows, $drillRows);
         }
@@ -114,6 +116,8 @@ class AddressImportService
             'response_raw' => $res['raw'],
             'response_size' => strlen($res['raw']),
         ]);
+
+        $this->recordRaw($log->id, '', $maxLevel, $year, $res);
 
         if (! $res['success']) {
             $log->update(['status' => 'failed', 'error_message' => $res['error']]);
@@ -172,7 +176,7 @@ class AddressImportService
      * @param  (callable(int,int,int):void)|null  $progress  进度回调 (done,total,rowsSoFar)
      * @return array{0:array<int,array>,1:array<int,array>,2:int}
      */
-    protected function drill(array $targets, ?int $year, ?int $delayMs, ?int $maxDelayMs, ?callable $progress = null): array
+    protected function drill(array $targets, ?int $year, ?int $delayMs, ?int $maxDelayMs, ?callable $progress = null, int $logId = 0): array
     {
         $delay = $delayMs ?? (int) config('services.address.mca_delay_ms', 350);
         $maxDelay = $maxDelayMs ?? (int) config('services.address.mca_max_delay_ms', 5000);
@@ -212,12 +216,37 @@ class AddressImportService
 
             $records[] = $record;
 
+            $this->recordRaw($logId, $target['code'], $target['maxLevel'], $year, $res);
+
             if ($progress !== null && ($i % 50 === 0 || $i === $total - 1)) {
                 $progress($i + 1, $total, count($rows));
             }
         }
 
         return [$rows, $records, $delay];
+    }
+
+    /**
+     * 每次接口请求的原始记录逐条落库（address_raw_records）。
+     *
+     * @param  array{http_status:?int,raw:string,nodes:?array<int,array>,success:bool,error:?string}  $res
+     */
+    protected function recordRaw(int $logId, string $code, int $maxLevel, ?int $year, array $res): void
+    {
+        AddressRawRecord::query()->create([
+            'log_id' => $logId,
+            'source' => 'mca',
+            'request_code' => $code,
+            'max_level' => $maxLevel,
+            'year' => $year,
+            'http_status' => $res['http_status'],
+            'response_raw' => $res['raw'],
+            'response_size' => strlen($res['raw']),
+            'node_count' => $res['nodes'] !== null ? count($res['nodes']) : 0,
+            'status' => $res['success'] ? 'success' : 'failed',
+            'error_message' => $res['error'],
+            'fetched_at' => now(),
+        ]);
     }
 
     /**
