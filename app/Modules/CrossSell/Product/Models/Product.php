@@ -93,4 +93,24 @@ class Product extends Model
 
         return $translation->description ?? $this->description;
     }
+
+    /**
+     * 同步指定语言的翻译（供 Filament 表单 title_en / description_en 落库）
+     */
+    public function syncTranslation(string $language, ?string $title, ?string $description): void
+    {
+        $title = $title === '' ? null : $title;
+        $description = $description === '' ? null : $description;
+
+        if ($title === null && $description === null) {
+            $this->translations()->where('language', $language)->delete();
+
+            return;
+        }
+
+        $this->translations()->updateOrCreate(
+            ['language' => $language],
+            ['title' => $title, 'description' => $description],
+        );
+    }
 }
